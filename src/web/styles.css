@@ -383,6 +383,136 @@ button {
   font-weight: 300;
 }
 
+/* ---- Share: the button in the crumb row and the dialog ---- */
+
+.share-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 10px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--track);
+  color: var(--secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.share-toggle:hover {
+  color: var(--ink);
+}
+
+dialog.share {
+  width: min(92vw, 440px);
+  max-height: 92dvh;
+  padding: 16px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow:
+    0 0 0 1px var(--divider),
+    0 20px 60px rgba(0, 0, 0, 0.22);
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+}
+dialog.share[open] {
+  display: flex;
+}
+dialog.share::backdrop {
+  background: rgba(11, 11, 11, 0.35);
+}
+.share-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.share-title {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.share-page {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.share-formats button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 6px 4px;
+}
+.share-formats .ratio {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.share-preview {
+  position: relative;
+  width: 100%;
+  max-height: 50dvh;
+  margin: 0 auto;
+  border-radius: 10px;
+  background: var(--track);
+  overflow: hidden;
+}
+.share-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.share-preview.loaded img {
+  opacity: 1;
+}
+.share-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.share-actions button,
+.share-actions a {
+  flex: 1;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--track);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.share-actions .primary {
+  background: var(--ink);
+  color: var(--surface);
+}
+.share-actions button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.share-note {
+  min-height: 18px;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
 /* ---- Stage: chart panel and/or treemap ---- */
 
 .stage {

@@ -16,6 +16,38 @@ import { aboutContent } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
 import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type Unit, type View } from "./routes";
+import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
+import {
+  COPY,
+  INK,
+  PAPER,
+  NF0,
+  NF1,
+  UNITS,
+  changeOver,
+  colorOf,
+  displayFor,
+  fmd,
+  fpct,
+  groupPanelColor,
+  historyPoints,
+  hueOf,
+  layout,
+  levelItems,
+  niceScale,
+  normalize,
+  pricesFor,
+  readable,
+  sign,
+  signed,
+  X,
+  type Display,
+  type Fmt,
+  type Item,
+  type Point,
+  type Prices,
+  type Series,
+} from "./model";
 import "./styles.css";
 
 /**
@@ -41,173 +73,6 @@ function installIcons() {
 /** content/om.md, converted to JSON when the bundle is built. */
 const ABOUT: Block[] = aboutContent();
 
-// ---- Design-only tweaks (constants in production) ----------------------------
-
-/** "färg" | "gråskala" */
-const COLOR_MODE: "färg" | "gråskala" = "färg";
-/** Bundle rows below 0.6 % of their group into one "Övriga" tile. */
-const GROUP_SMALL = true;
-
-const TAIL_CUT = GROUP_SMALL ? 0.006 : 0;
-const INK = "#0b0b0b";
-const PAPER = "#fcfcfb";
-
-// ---- Formatting ---------------------------------------------------------------
-
-const NF1 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
-const NF0 = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 });
-const NF2 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-/** Amounts are in tkr; 1 mdkr = 1e6 tkr. */
-const fmd = (tkr: number) => {
-  const m = tkr / 1e6;
-  if (m >= 10) return `${NF0.format(m)} mdkr`;
-  if (m >= 0.1) return `${NF1.format(m)} mdkr`;
-  return `${NF0.format(tkr / 1e3)} mnkr`;
-};
-const fpct = (p: number) => `${p >= 10 ? NF0.format(p) : p >= 0.1 ? NF1.format(p) : "<0,1"} %`;
-const signed = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±") + fmd(Math.abs(v));
-/** Exact amount in tkr, e.g. "1 543 317 501 tkr". */
-const ftkr = (tkr: number) => `${NF0.format(Math.round(tkr))} tkr`;
-const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±");
-
-/** How a graph writes its values: in kronor (tkr) or in percent of a year's total. */
-type Fmt = {
-  /** Compact, for dot labels and headlines. */
-  short: (v: number) => string;
-  /** Exact, for the info box and screen readers. */
-  exact: (v: number) => string;
-  /** Gridline label for value v on an axis with the given step. */
-  grid: (v: number, step: number) => string;
-  /** Change from one year to the next, with the previous value for a relative figure. */
-  diff: (d: number, prev: number) => string;
-  /** Smallest headroom above the data, in the value's unit. */
-  minPad: number;
-};
-
-const FMT_KR: Fmt = {
-  short: fmd,
-  exact: ftkr,
-  grid: (v, step) => (step >= 1e6 ? NF0 : NF1).format(v / 1e6),
-  diff: (d, prev) => `${sign(d)}${ftkr(Math.abs(d))}${prev ? ` (${sign(d)}${NF1.format(Math.abs((d / prev) * 100))} %)` : ""}`,
-  minPad: 1,
-};
-
-const FMT_PCT: Fmt = {
-  short: (v) => `${NF1.format(v)} %`,
-  exact: (v) => `${NF2.format(v)} %`,
-  grid: (v, step) => `${(step >= 1 ? NF0 : NF1).format(v)} %`,
-  diff: (d) => `${sign(d)}${NF2.format(Math.abs(d))} procentenheter`,
-  minPad: 0.05,
-};
-
-const UNITS: { k: Unit; label: string; note: string }[] = [
-  { k: "kr", label: "kr", note: "" },
-  { k: "rev", label: "% av inkomster", note: " · % av inkomsterna" },
-  { k: "exp", label: "% av utgifter", note: " · % av utgifterna" },
-];
-
-// ---- Data model ---------------------------------------------------------------
-
-type NormRow = { key: string; id: number; title: string; v: number };
-type NormGroup = { key: string; code: string; title: string; total: number; rows: NormRow[] };
-
-/**
- * Normalize expenses and revenues to one shape, as the design handoff specifies.
- * `f` is a price-level factor (1 = nominal) applied to every amount.
- */
-function normalize(b: BudgetJson, view: View, f = 1): NormGroup[] {
-  return view === "rev"
-    ? b.revenues.map((g) => ({
-        key: `ink${g.id_start}`,
-        code: String(g.id_start),
-        title: g.title,
-        total: g.total * f,
-        rows: g.rows.map((r) => ({ key: String(r.id), id: r.id, title: r.title, v: r.revenue * f })),
-      }))
-    : b.expenses.map((g) => ({
-        key: `uo${g.uo}`,
-        code: `UO ${g.uo}`,
-        title: g.title,
-        total: g.total * f,
-        rows: g.rows.map((r) => ({ key: r.title, id: r.id, title: r.title, v: r.expense * f })),
-      }));
-}
-
-const COPY = {
-  exp: {
-    label: "Utgifter",
-    item: "Anslag",
-    items: "anslag",
-    areas: "utgiftsområden",
-    rest: "Övriga mindre anslag",
-    all: "statens utgifter",
-    root: "Alla utgiftsområden",
-    kind: "Utgiftsområde",
-    heading: "Statens utgifter",
-  },
-  rev: {
-    label: "Inkomster",
-    item: "Inkomsttitel",
-    items: "inkomsttitlar",
-    areas: "inkomsttyper",
-    rest: "Övriga inkomsttitlar",
-    all: "statens inkomster",
-    root: "Alla inkomsttyper",
-    kind: "Inkomsttyp",
-    heading: "Statens inkomster",
-  },
-} as const;
-
-// ---- Squarified treemap -------------------------------------------------------
-
-type Placed<T> = { it: T; a: number; x: number; y: number; w: number; h: number };
-
-function squarify<T>(items: { it: T; a: number }[], W: number, H: number): Placed<T>[] {
-  const out: Placed<T>[] = [];
-  let rest = items.slice();
-  let x = 0, y = 0, w = W, h = H;
-  const worst = (row: { a: number }[], s: number) => {
-    const sum = row.reduce((acc, r) => acc + r.a, 0);
-    const mx = Math.max(...row.map((r) => r.a));
-    const mn = Math.min(...row.map((r) => r.a));
-    return Math.max((s * s * mx) / (sum * sum), (sum * sum) / (s * s * mn));
-  };
-  while (rest.length) {
-    const s = Math.min(w, h);
-    const row = [rest[0]!];
-    let i = 1;
-    while (i < rest.length && worst([...row, rest[i]!], s) <= worst(row, s)) {
-      row.push(rest[i]!);
-      i++;
-    }
-    rest = rest.slice(i);
-    const sum = row.reduce((acc, r) => acc + r.a, 0);
-    if (w >= h) {
-      const cw = sum / h;
-      let cy = y;
-      for (const r of row) {
-        const rh = r.a / cw;
-        out.push({ ...r, x, y: cy, w: cw, h: rh });
-        cy += rh;
-      }
-      x += cw;
-      w -= cw;
-    } else {
-      const rh = sum / w;
-      let cx = x;
-      for (const r of row) {
-        const rw = r.a / rh;
-        out.push({ ...r, x: cx, y, w: rw, h: rh });
-        cx += rw;
-      }
-      y += rh;
-      h -= rh;
-    }
-  }
-  return out;
-}
-
 // ---- Logo ---------------------------------------------------------------------
 
 /** The mark: a mini treemap, same geometry as assets/favicon.svg. */
@@ -224,82 +89,7 @@ const Logo = ({ size = 20 }: { size?: number }) => (
 
 type Info = { title: string; value?: string; share?: string; hint?: string };
 
-/** Price-level helpers passed down to the charts. */
-type Prices = {
-  /** Factor per year (1 when showing nominal amounts). */
-  factorOf: (y: number) => number;
-  /** True when a year is shown nominal because inflation data is missing. */
-  nominal: (y: number) => boolean;
-  priceNote: string;
-  nominalNote: string;
-};
-
-/** The unit the graphs are drawn in, see the `andel` query parameter. */
-type Display = {
-  unit: Unit;
-  /** An amount in tkr for year y, converted to the unit. */
-  toUnit: (v: number, y: number) => number;
-  fmt: Fmt;
-  /** Kicker suffix naming the unit, empty for kronor. */
-  unitNote: string;
-};
-
-type Item = {
-  key: string;
-  id: number | null;
-  code: string;
-  label: string;
-  v: number;
-  hue: number;
-  lv?: number;
-  rank: number;
-  drill?: boolean;
-  rest?: boolean;
-  onClick?: () => void;
-};
-
-/** Tile colour per the design: hue by group, lightness by rank. */
-function colorOf(it: Item, drilled: boolean): { bg: string; fg: string } {
-  let L: number, C: number;
-  if (COLOR_MODE === "färg") {
-    L = it.rest ? 0.9 : drilled ? 0.62 + it.rank * 0.28 : 0.74 + (it.lv ?? 0) * 0.04;
-    C = it.rest ? 0.02 : drilled ? 0.13 - it.rank * 0.07 : 0.11;
-  } else {
-    L = 0.36 + Math.pow(it.rank, 0.7) * 0.54;
-    C = 0.02;
-  }
-  const hue = COLOR_MODE === "färg" ? it.hue : 260;
-  return { bg: `oklch(${L.toFixed(3)} ${C.toFixed(3)} ${hue})`, fg: L < 0.66 ? PAPER : INK };
-}
-
 // ---- Line chart (overview and group/item history) ------------------------------
-
-type Point = { y: number; v: number };
-type Series = { key: string; points: Point[]; color?: string; label?: string };
-
-/** Chart x position in percent for point i of n, inset 5 %–95 %. */
-const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 90);
-
-/**
- * Y axis from the data, with gridline labels in mdkr. The bottom snaps down
- * to a nice step so the lowest gridline is the floor; the top is the data
- * plus a small headroom and is not snapped, so the plot fills the panel
- * instead of leaving an empty band up to the next round number.
- */
-function niceScale(values: number[], minPad: number) {
-  const mn = Math.min(...values);
-  const mx = Math.max(...values);
-  const pad = Math.max((mx - mn) * 0.1, mx * 0.04, minPad);
-  const hi = mx + pad;
-  const raw = (hi - Math.max(0, mn - pad)) / 5;
-  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
-  const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
-  const lo = Math.max(0, Math.floor((mn - pad) / step) * step);
-  const Y = (v: number) => 100 - ((v - lo) / (hi - lo || 1)) * 100;
-  const grid: { top: string; v: number }[] = [];
-  for (let v = lo; v <= hi + step * 1e-9; v += step) grid.push({ top: `${Y(v)}%`, v });
-  return { Y, grid, step };
-}
 
 /** True one frame after mount, to drive the enter transitions. */
 function useRevealed() {
@@ -469,18 +259,6 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt }: LineChar
   );
 }
 
-/** Headline change between the first and last year that are in the same prices. */
-function changeOver(points: Point[], nominal: (y: number) => boolean) {
-  const comparable = points.filter((p) => !nominal(p.y));
-  const span = comparable.length >= 2 ? comparable : points;
-  const first = span[0]!;
-  const last = span[span.length - 1]!;
-  const pct = first.v ? ((last.v - first.v) / first.v) * 100 : 0;
-  return { first, last, pct };
-}
-
-// ---- Overview: inkomster vs utgifter per year ----------------------------------
-
 type OverviewProps = Prices & Display & {
   years: number[];
   budgets: Record<number, BudgetJson>;
@@ -574,13 +352,7 @@ function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, 
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
-  const points = years.map((y) => {
-    const b = budgets[y];
-    const g = b ? normalize(b, view, factorOf(y)).find((x) => x.key === gkey) : undefined;
-    let v = 0;
-    if (g) v = row == null ? g.total : (g.rows.find((r) => r.key === row)?.v ?? 0);
-    return { y, v: toUnit(v, y) };
-  });
+  const points = historyPoints(years, budgets, view, gkey, row, factorOf, toUnit);
   const { first, last, pct } = changeOver(points, nominal);
   const dark = fg !== INK;
   // In kronor the headline is the relative change with the amount below; in
@@ -646,9 +418,6 @@ type TileProps = {
   onHover: (info: Info | null) => void;
   onActivate: () => void;
 };
-
-/** A tile this small can't carry its label; the first click zooms it instead of acting. */
-const readable = (w: number, h: number) => w > 84 && h > 54;
 
 function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, onHover, onActivate }: TileProps) {
   const minD = Math.min(w, h);
@@ -890,6 +659,123 @@ function Search({ budget, year, q, onChange, onPick }: SearchProps) {
 
 // ---- App ----------------------------------------------------------------------
 
+// ---- Share dialog ---------------------------------------------------------------
+
+type ShareProps = {
+  open: boolean;
+  onClose: () => void;
+  /** The page's title, for the share sheet and the file name. */
+  title: string;
+};
+
+/**
+ * Share the chart on screen: pick a format, see the image the server draws
+ * for this URL, and share it through the system share sheet where there is
+ * one (phones), or download it. The page link can always be copied.
+ */
+function Share({ open, onClose, title }: ShareProps) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [format, setFormat] = useState<Format>("square");
+  const [loaded, setLoaded] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const pageUrl = window.location.href;
+  const imagePath = socialImagePath(new URL(pageUrl), format);
+  const canShareFiles = typeof navigator.canShare === "function" && navigator.canShare({ files: [new File([], "x.png", { type: "image/png" })] });
+
+  // A native dialog: modal, with Esc and a focus trap for free.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (open && !el.open) {
+      el.showModal();
+      setNote(null);
+    } else if (!open && el.open) el.close();
+  }, [open]);
+  useEffect(() => setLoaded(false), [format, imagePath]);
+
+  const fileName = `statsbudgeten-${title.toLowerCase().replace(/[^a-z0-9åäö]+/g, "-").replace(/^-|-$/g, "")}-${format}.png`;
+
+  const shareImage = async () => {
+    if (!imagePath) return;
+    setBusy(true);
+    try {
+      const blob = await (await fetch(imagePath)).blob();
+      const file = new File([blob], fileName, { type: "image/png" });
+      const withLink = { files: [file], title, text: `${title} – Statsbudgeten`, url: pageUrl };
+      // Some browsers refuse a link next to files; then the text carries it.
+      const data = navigator.canShare?.(withLink) ? withLink : { files: [file], title, text: `${title} – ${pageUrl}` };
+      await navigator.share(data);
+      trackEvent("share", { method: "share_sheet", format });
+    } catch (e) {
+      if ((e as Error).name !== "AbortError") setNote("Kunde inte dela, ladda ner bilden i stället.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(pageUrl);
+      setNote("Länken är kopierad.");
+      trackEvent("share", { method: "copy_link", format });
+    } catch {
+      setNote(pageUrl);
+    }
+  };
+
+  const spec = FORMATS[format];
+  return (
+    <dialog
+      ref={ref}
+      className="share"
+      aria-label="Dela"
+      onClose={onClose}
+      onClick={(e) => {
+        // A click on the backdrop lands on the dialog itself.
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="share-head">
+        <span className="share-title">Dela</span>
+        <span className="share-page">{title}</span>
+        <button type="button" className="icon-btn" aria-label="Stäng" onClick={onClose}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <div className="seg share-formats" role="radiogroup" aria-label="Format">
+        {FORMAT_KEYS.map((k) => (
+          <button key={k} type="button" role="radio" aria-checked={k === format} className={k === format ? "active" : ""} onClick={() => setFormat(k)}>
+            {FORMATS[k].label}
+            <span className="ratio">{FORMATS[k].ratio}</span>
+          </button>
+        ))}
+      </div>
+      <div className={`share-preview${loaded ? " loaded" : ""}`} style={{ aspectRatio: `${spec.w} / ${spec.h}` }}>
+        {open && imagePath && <img src={imagePath} alt={`${title}, ${spec.label} ${spec.ratio}`} width={spec.w} height={spec.h} onLoad={() => setLoaded(true)} />}
+      </div>
+      <div className="share-actions">
+        {canShareFiles && (
+          <button type="button" className="primary" disabled={busy || !loaded} onClick={shareImage}>
+            Dela bild
+          </button>
+        )}
+        <a className={canShareFiles ? "" : "primary"} href={imagePath ?? "#"} download={fileName} onClick={() => trackEvent("share", { method: "download", format })}>
+          Ladda ner
+        </a>
+        <button type="button" onClick={copyLink}>
+          Kopiera länk
+        </button>
+      </div>
+      <div className="share-note" role="status">
+        {note ?? `${spec.w} × ${spec.h} px`}
+      </div>
+    </dialog>
+  );
+}
+
 const initialRoute = parseRoute(new URL(window.location.href));
 
 function App() {
@@ -908,6 +794,7 @@ function App() {
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   /** The settings popover on desktop (inflation, year, unit). */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -998,6 +885,7 @@ function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (menuOpen) return setMenuOpen(false);
+      if (shareOpen) return; // the dialog closes itself
       if (settingsOpen) return setSettingsOpen(false);
       if (zoomKey != null) return setZoomKey(null);
       if (mode === "about") return showOverview();
@@ -1011,7 +899,7 @@ function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [menuOpen, settingsOpen, zoomKey, mode, q, itemKey, pendingItem, rest]);
+  }, [menuOpen, shareOpen, settingsOpen, zoomKey, mode, q, itemKey, pendingItem, rest]);
 
   // The settings popover closes on a click anywhere outside it.
   useEffect(() => {
@@ -1156,33 +1044,17 @@ function App() {
   const { factors, convertible } = useMemo(() => inflationFactors(rates, yrs, baseYear ?? 0), [rates, yrs, baseYear]);
   const hasInflation = baseYear != null && convertible.length > 1;
   const real = realWanted && hasInflation;
-  const prices: Prices = {
-    factorOf: (y) => (real ? (factors.get(y) ?? 1) : 1),
-    nominal: (y) => real && factors.get(y) == null,
-    priceNote: real && baseYear != null ? ` · i ${baseYear} års priser` : "",
-    nominalNote: "* nominellt, inflationsdata saknas",
-  };
+  const prices = pricesFor(real, baseYear, factors);
   const { factorOf, nominal, priceNote, nominalNote } = prices;
   const f = year != null ? factorOf(year) : 1;
 
   // Graph unit: kronor, or percent of the year's total revenues or expenses.
-  // Amounts arrive price-adjusted, so the total is adjusted the same way.
-  const display: Display = {
-    unit,
-    toUnit: (v, y) => {
-      if (unit === "kr") return v;
-      const b = budgets[y];
-      const total = (unit === "rev" ? (b?.revenuesTotal ?? 0) : (b?.expensesTotal ?? 0)) * factorOf(y);
-      return total ? (v / total) * 100 : 0;
-    },
-    fmt: unit === "kr" ? FMT_KR : FMT_PCT,
-    unitNote: UNITS.find((u) => u.k === unit)?.note ?? "",
-  };
+  const display = displayFor(unit, budgets, factorOf);
 
   const all = useMemo(() => (B ? normalize(B, view, f) : []), [B, view, f]);
   const total = B ? (rev ? B.revenuesTotal : B.expensesTotal) * f : 0;
   const groups = all.filter((g) => g.total > 0).sort((a, b) => b.total - a.total);
-  const hueOf = Object.fromEntries(all.map((g, i) => [g.key, ((i * 360) / all.length + (rev ? 30 : 250)) % 360])) as Record<string, number>;
+  const hues = hueOf(all, view);
   const group = uo != null ? (all.find((g) => g.key === uo) ?? null) : null;
   const gross = groups.reduce((s, g) => s + g.total, 0) || 1;
   const negs = all.filter((g) => g.total < 0);
@@ -1242,80 +1114,36 @@ function App() {
     synced.current = url;
   }, [mode, view, year, group, rest, itemId, real, unit, q, latest, pageTitle]);
 
-  // Items at the current drill level.
-  let items: Item[] = [];
-  let parentTotal = total;
-  if (B && !group) {
-    items = groups.map((g, i) => ({
-      key: g.key,
-      id: null,
-      code: g.code,
-      label: g.title,
-      v: g.total,
-      hue: hueOf[g.key]!,
-      lv: i % 3,
-      rank: i / groups.length,
-      drill: true,
-      onClick: () => {
-        setUo(g.key);
-        setRest(false);
-        clearFocus();
-        setHover(null);
-      },
-    }));
-  } else if (B && group) {
-    const rows = group.rows.filter((r) => r.v > 0).sort((a, b) => b.v - a.v);
-    const sum = rows.reduce((s, r) => s + r.v, 0) || 1;
-    const big = rows.filter((r) => r.v / sum >= TAIL_CUT);
-    const tail = rows.filter((r) => r.v / sum < TAIL_CUT);
-    const useTail = tail.length > 1 && !rest;
-    const list = rest ? tail : useTail ? big : rows;
-    parentTotal = group.total;
-    const hue = hueOf[group.key]!;
-    items = list.map((r, i) => ({
-      key: r.key,
-      id: r.id,
-      code: `${T.item} ${r.id ?? ""}`,
-      label: r.title,
-      v: r.v,
-      hue,
-      rank: i / Math.max(1, list.length),
-      onClick: () => {
-        setItemKey((k) => (k === r.key ? null : r.key));
-        setPendingItem(null);
-        setHover(null);
-      },
-    }));
-    if (useTail) {
-      items.push({
-        key: "__rest",
-        id: null,
-        code: `${tail.length} ${T.items}`,
-        label: T.rest,
-        v: tail.reduce((s, r) => s + r.v, 0),
-        hue,
-        rank: 1,
-        rest: true,
-        drill: true,
-        onClick: () => {
-          setRest(true);
-          clearFocus();
-          setHover(null);
-        },
-      });
+  // Items at the current drill level, with what a click on each does.
+  const level = B ? levelItems(all, view, group, rest) : { items: [], parentTotal: total };
+  const parentTotal = level.parentTotal;
+  const items: Item[] = level.items;
+  const clickOn = (it: Item) => () => {
+    if (!group) {
+      setUo(it.key);
+      setRest(false);
+    } else if (it.rest) {
+      setRest(true);
+    } else {
+      setItemKey((k) => (k === it.key ? null : it.key));
+      setPendingItem(null);
+      setHover(null);
+      return;
     }
-  }
+    clearFocus();
+    setHover(null);
+  };
 
   const { W, H } = size;
   const sumItems = items.reduce((s, it) => s + it.v, 0) || 1;
-  const rects = squarify(items.map((it) => ({ it, a: (it.v / sumItems) * W * H })), W, H);
+  const rects = layout(items, W, H);
   const multiYear = yrs.length > 1;
 
   // The focus panel takes the group colour, or the focused posting's tile colour.
   const focusItem = focusedRow ? items.find((it) => it.key === focusedRow.key) : undefined;
   const panelColor = focusItem
     ? colorOf(focusItem, true)
-    : { bg: group ? (COLOR_MODE === "färg" ? `oklch(0.80 0.09 ${hueOf[group.key]})` : "oklch(0.86 0.01 260)") : PAPER, fg: INK };
+    : { bg: group ? groupPanelColor(hues[group.key]!) : PAPER, fg: INK };
 
   const saldoShown = B && year != null ? display.toUnit(B.revenuesTotal * f, year) - display.toUnit(B.expensesTotal * f, year) : 0;
   const base: Info = mode === "about"
@@ -1592,7 +1420,16 @@ function App() {
             </>
           )}
         </nav>
+        {!about && !searching && B && (
+          <button type="button" className="share-toggle" onClick={() => setShareOpen(true)} title="Dela som bild eller länk">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+            </svg>
+            <span>Dela</span>
+          </button>
+        )}
       </header>
+      <Share open={shareOpen} onClose={() => setShareOpen(false)} title={pageTitle} />
 
       <div className="stage" inert={menuOpen || undefined}>
         {about && <About />}
@@ -1648,7 +1485,7 @@ function App() {
                     ? "Klicka för att utforska"
                     : "Klicka för att visa historik",
               };
-              const act = it.onClick ?? (() => setHover(tileInfo));
+              const act = clickOn(it);
               const activate = () => {
                 if (!zoomed && !readable(w0, h0)) {
                   // Too small to read: show it first, act on the next click.

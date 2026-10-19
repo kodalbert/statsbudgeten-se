@@ -4,7 +4,10 @@
  * Usage: bun --hot src/server.ts  (or `bun run web`)
  */
 import index from "./web/index.html";
+import { BudgetJsonSchema, type BudgetJson } from "../types/BudgetJsonSchema";
 import { InflationSchema } from "../types/InflationSchema";
+import { HEIGHT, WIDTH, pageDescription, pageTitle, renderPng, routeForImage, socialImagePath, type Data } from "./social";
+import { buildUrl, parseRoute } from "./web/routes";
 
 const root = new URL("..", import.meta.url).pathname;
 
@@ -33,27 +36,117 @@ function listSources() {
   return [...budgets, ...others];
 }
 
-/** Favicon, app icons and the web manifest, from assets/. */
+/** Favicon, app icons, the social share image and the web manifest, from assets/. */
 const asset = (file: string, type: string) =>
   new Response(Bun.file(`${root}assets/${file}`), { headers: { "content-type": type, "cache-control": "public, max-age=86400" } });
+
+/** The public origin, for the absolute URLs in the share tags. */
+const SITE = process.env.SITE_URL ?? (process.env.NODE_ENV === "production" ? "https://statsbudgeten.se" : null);
+
+/** Every budget year and the inflation rates, read once for the share images. */
+let dataPromise: Promise<Data> | null = null;
+function loadData(): Promise<Data> {
+  dataPromise ??= (async () => {
+    const years = listYears();
+    const budgets: Record<number, BudgetJson> = {};
+    for (const y of years) budgets[y] = BudgetJsonSchema.parse(await Bun.file(`${root}data/${y}.json`).json());
+    const file = Bun.file(`${root}data/inflation.json`);
+    const inflation = (await file.exists()) ? InflationSchema.safeParse(await file.json()) : null;
+    return { years, budgets, rates: inflation?.success ? inflation.data.rates : {} };
+  })();
+  return dataPromise;
+}
+
+/** Rendered share images by their URL, newest last; the oldest go when it is full. */
+const images = new Map<string, Uint8Array>();
+const IMAGE_CACHE = 64;
+
+/** /social/<page>.png: the chart the page shows, as a PNG in the format the query asks for. */
+async function socialImage(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const image = routeForImage(url);
+  if (!image) return new Response("Not found", { status: 404 });
+  const { route, format } = image;
+  const data = await loadData();
+  // Equivalent URLs (say, the latest year spelled out) share one image.
+  const key = `${format} ${buildUrl(route, data.years[0] ?? null)}`;
+  let png = images.get(key);
+  if (!png) {
+    const rendered = renderPng(route, data, format);
+    if (!rendered) return new Response("Not found", { status: 404 });
+    png = rendered;
+    if (images.size >= IMAGE_CACHE) images.delete(images.keys().next().value!);
+    images.set(key, png);
+  }
+  return new Response(png as Uint8Array<ArrayBuffer>, { headers: { "content-type": "image/png", "cache-control": "public, max-age=86400" } });
+}
+
+/**
+ * The app page, with the share tags set for the URL: the title, a description
+ * and an og:image of the chart the page shows, so a link to a drilled-down
+ * view previews that view. The bundled HTML is fetched from the server itself.
+ */
+async function page(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const html = await fetch(new URL("/__index", url), { headers: { accept: "text/html" } });
+  const data = await loadData().catch(() => null);
+  if (!data) return html;
+  const route = parseRoute(url);
+  const origin = SITE ?? url.origin;
+  const title = `${pageTitle(route, data)} – Statsbudgeten`;
+  const description = pageDescription(route, data);
+  const imagePath = socialImagePath(url);
+  const image = imagePath ? { url: `${origin}${imagePath}`, w: WIDTH, h: HEIGHT, alt: title } : { url: `${origin}/social.png`, w: 1280, h: 640, alt: "Statsbudgeten.se" };
+  const canonical = `${origin}${buildUrl({ ...route, q: "" }, data.years[0] ?? null)}`;
+  const set = (attr: string, value: string) => ({
+    element: (el: HTMLRewriterTypes.Element) => {
+      el.setAttribute(attr, value);
+    },
+  });
+  const describe = {
+    element: (el: HTMLRewriterTypes.Element) => {
+      if (description) el.setAttribute("content", description);
+    },
+  };
+  return new HTMLRewriter()
+    .on("title", {
+      element: (el) => {
+        el.setInnerContent(title);
+      },
+    })
+    .on('meta[property="og:title"]', set("content", title))
+    .on('meta[property="og:url"]', set("content", canonical))
+    .on('link[rel="canonical"]', set("href", canonical))
+    .on('meta[property="og:image"]', set("content", image.url))
+    .on('meta[property="og:image:width"]', set("content", String(image.w)))
+    .on('meta[property="og:image:height"]', set("content", String(image.h)))
+    .on('meta[property="og:image:alt"]', set("content", image.alt))
+    .on('meta[property="og:description"]', describe)
+    .on('meta[name="description"]', describe)
+    .transform(html);
+}
 
 const server = Bun.serve({
   port: Number(process.env.PORT ?? 3000),
   routes: {
-    "/": index,
+    "/": page,
     // The app owns these paths; they mirror the drill state (src/web/routes.ts).
-    "/utgifter": index,
-    "/utgifter/*": index,
-    "/inkomster": index,
-    "/inkomster/*": index,
-    "/om": index,
+    "/utgifter": page,
+    "/utgifter/*": page,
+    "/inkomster": page,
+    "/inkomster/*": page,
+    "/om": page,
+    "/sok": page,
+    // The bundled app page itself; `page` fetches it and fills in the share tags.
+    "/__index": index,
+    "/social/*": socialImage,
     "/favicon.svg": () => asset("favicon.svg", "image/svg+xml"),
     "/apple-touch-icon.png": () => asset("apple-touch-icon.png", "image/png"),
     "/icon-192.png": () => asset("icon-192.png", "image/png"),
     "/icon-512.png": () => asset("icon-512.png", "image/png"),
     "/icon-maskable-512.png": () => asset("icon-maskable-512.png", "image/png"),
+    "/social.png": () => asset("social.png", "image/png"),
     "/site.webmanifest": () => asset("site.webmanifest", "application/manifest+json"),
-    "/sok": index,
     "/api/sources": () => Response.json(listSources()),
     "/examples/:file": async (req) => {
       const { file } = req.params;

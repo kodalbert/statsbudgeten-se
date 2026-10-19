@@ -75,6 +75,15 @@ SVG, without a charting library. The about page is a small Markdown subset
 the `[sources]` line becomes download links for the workbooks in `examples/`,
 which the server serves at `/examples/<file>`.
 
+Link previews show the chart the page shows: the server fills in the share tags
+(`og:title`, `og:description`, `og:image`) for each app URL and draws the image
+on demand at `/social/<page>.png`, for example `/social/utgifter/6.png?year=2024`.
+The image is the same model as the app (`src/web/model.ts`) written as SVG and
+rasterised with resvg (`src/social.ts`), using the bundled Inter font so it looks
+the same on every machine. The about and search pages use the static `/social.png`. The *Dela* button on
+every chart page offers the same image as a square, 4:5 or 9:16 (`?format=square`,
+`portrait`, `story`) for posting, through the system share sheet or as a download.
+
 Google Analytics is wired up in `src/web/analytics.ts` (measurement ID at the top
 of the file). It is not loaded on localhost. Each URL change is reported as a page
 view and flipping the inflation toggle is an event.
