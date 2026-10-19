@@ -15,7 +15,7 @@ import { initAnalytics, trackEvent, trackPageView } from "./analytics";
 import { aboutContent } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
-import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type View } from "./routes";
+import { buildUrl, groupKey, groupNumber, parseRoute, type Compare, type Mode, type View } from "./routes";
 import "./styles.css";
 
 /**
@@ -228,7 +228,23 @@ function colorOf(it: Item, drilled: boolean): { bg: string; fg: string } {
 // ---- Line chart (overview and group/item history) ------------------------------
 
 type Point = { y: number; v: number };
-type Series = { key: string; points: Point[]; color?: string; label?: string };
+/** `dash` draws the series dashed with square dots: the compared series in the focus graph. */
+type Series = { key: string; points: Point[]; color?: string; label?: string; dash?: boolean };
+
+/** How a graph writes its values: in kronor, or as an index with the first year = 100. */
+type ValueFmt = {
+  /** Compact, for dot labels. */
+  short: (v: number) => string;
+  /** Exact, for the info box and screen readers. */
+  exact: (v: number) => string;
+  /** Gridline label for value v on an axis with the given step. */
+  grid: (v: number, step: number) => string;
+};
+const FMT_KR: ValueFmt = { short: fmd, exact: ftkr, grid: (v, step) => (step >= 1e6 ? NF0 : NF1).format(v / 1e6) };
+const FMT_INDEX: ValueFmt = { short: (v) => NF0.format(v), exact: (v) => NF1.format(v), grid: (v) => NF0.format(v) };
+
+/** Series marker: a dot, or a square for the compared series. */
+const Mark = ({ square, color }: { square?: boolean; color?: string }) => <span className={`mk${square ? " sq" : ""}`} style={{ background: color }} aria-hidden />;
 
 /** Chart x position in percent for point i of n, inset 5 %–95 %. */
 const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 90);
@@ -239,7 +255,7 @@ const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 90);
  * plus a small headroom and is not snapped, so the plot fills the panel
  * instead of leaving an empty band up to the next round number.
  */
-function niceScale(values: number[]) {
+function niceScale(values: number[], label: ValueFmt["grid"]) {
   const mn = Math.min(...values);
   const mx = Math.max(...values);
   const pad = Math.max((mx - mn) * 0.1, mx * 0.04, 1);
@@ -251,7 +267,7 @@ function niceScale(values: number[]) {
   const Y = (v: number) => 100 - ((v - lo) / (hi - lo || 1)) * 100;
   const grid: { top: string; label: string }[] = [];
   for (let v = lo; v <= hi; v += step) {
-    grid.push({ top: `${Y(v)}%`, label: (step >= 1e6 ? NF0 : NF1).format(v / 1e6) });
+    grid.push({ top: `${Y(v)}%`, label: label(v, step) });
   }
   return { Y, grid };
 }
@@ -282,18 +298,20 @@ type LineChartProps = {
   paper: string;
   /** Extra line at the bottom of the info box for year index i, e.g. the saldo. */
   extra?: (i: number) => string | null;
+  /** Value format; kronor unless given. */
+  fmt?: ValueFmt;
 };
 
 /**
  * Line chart with an info box: hovering a year's dot or label shows the exact
  * figures and the change from the previous year; clicking pins the box.
  */
-function LineChart({ series, years, year, nominal, paper, extra }: LineChartProps) {
+function LineChart({ series, years, year, nominal, paper, extra, fmt = FMT_KR }: LineChartProps) {
   const open = useRevealed();
   const [hoverYear, setHoverYear] = useState<number | null>(null);
   const [pinnedYear, setPinnedYear] = useState<number | null>(null);
   const n = years.length;
-  const { Y, grid } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)));
+  const { Y, grid } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.grid);
   const pts = (s: Series) => s.points.map((p, i) => `${X(i, n).toFixed(2)},${Y(p.v).toFixed(2)}`).join(" ");
   const selIndex = Math.max(0, years.indexOf(year));
   // With several series, each year's highest value is labelled above its dot
@@ -344,13 +362,13 @@ function LineChart({ series, years, year, nominal, paper, extra }: LineChartProp
             <div className="ib-row" key={s.key}>
               {series.length > 1 && (
                 <span className="ib-label">
-                  {s.color && <span className="swatch" style={{ background: s.color }} />}
-                  {s.label}
+                  <Mark square={s.dash} color={s.color} />
+                  <span className="txt">{s.label}</span>
                 </span>
               )}
-              <span className="ib-val">{ftkr(v)}</span>
+              <span className="ib-val">{fmt.exact(v)}</span>
               <span className="ib-diff">
-                {d != null ? `${sign(d)}${ftkr(Math.abs(d))}${pct != null ? ` (${sign(pct)}${NF1.format(Math.abs(pct))} %)` : ""}${mixed ? "*" : ""}` : "första året i serien"}
+                {d != null ? `${sign(d)}${fmt.exact(Math.abs(d))}${pct != null ? ` (${sign(pct)}${NF1.format(Math.abs(pct))} %)` : ""}${mixed ? "*" : ""}` : "första året i serien"}
               </span>
             </div>
           );
@@ -372,8 +390,17 @@ function LineChart({ series, years, year, nominal, paper, extra }: LineChartProp
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
           {series.map((s) => (
             <React.Fragment key={s.key}>
-              <polygon points={`${X(0, n)},100 ${pts(s)} ${X(n - 1, n)},100`} fill={s.color ?? "currentColor"} style={{ opacity: s.color ? 0.08 : 0.1 }} />
-              <polyline points={pts(s)} fill="none" stroke={s.color ?? "currentColor"} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+              <polygon points={`${X(0, n)},100 ${pts(s)} ${X(n - 1, n)},100`} fill={s.color ?? "currentColor"} style={{ opacity: s.dash ? 0.05 : s.color ? 0.08 : 0.1 }} />
+              <polyline
+                points={pts(s)}
+                fill="none"
+                stroke={s.color ?? "currentColor"}
+                strokeWidth="3"
+                strokeDasharray={s.dash ? "7 6" : undefined}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
+              />
             </React.Fragment>
           ))}
         </svg>
@@ -382,12 +409,14 @@ function LineChart({ series, years, year, nominal, paper, extra }: LineChartProp
         s.points.map((p, i) => {
           const selected = p.y === year;
           const active = p.y === shown;
+          // A label below a dot near the floor would land on the year labels.
+          const under = below(s, i) && Y(p.v) < 84;
           return (
             <button
               key={`${s.key}-${p.y}`}
               type="button"
-              className={`dot${below(s, i) ? " below" : ""}${active ? " active" : ""}${selected ? " selected" : ""}`}
-              aria-label={`${s.label ? `${s.label} ` : ""}${p.y}: ${ftkr(p.v)}`}
+              className={`dot${s.dash ? " sq" : ""}${under ? " below" : ""}${active ? " active" : ""}${selected ? " selected" : ""}`}
+              aria-label={`${s.label ? `${s.label} ` : ""}${p.y}: ${fmt.exact(p.v)}`}
               aria-pressed={pinnedYear === p.y}
               style={{
                 left: `${X(i, n)}%`,
@@ -398,7 +427,7 @@ function LineChart({ series, years, year, nominal, paper, extra }: LineChartProp
               }}
               {...handlers(p.y)}
             >
-              <span className="val">{fmd(p.v)}</span>
+              <span className="val">{fmt.short(p.v)}</span>
               <span className="mark" style={{ width: selected ? 16 : 12, height: selected ? 16 : 12, background: selected ? "currentColor" : paper }} />
             </button>
           );
@@ -518,53 +547,259 @@ type FocusProps = Prices & {
   title: string;
   bg: string;
   fg: string;
+  /** This year's budget, searched by the compare picker. */
+  budget: BudgetJson | undefined;
+  compare: CompareTarget | null;
+  /** Draw both series as an index, first year = 100. */
+  index: boolean;
+  onCompare: (hit: SearchHit) => void;
+  onClearCompare: () => void;
+  onToggleIndex: () => void;
 };
 
-function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, fg, factorOf, nominal, priceNote, nominalNote }: FocusProps) {
-  const points = years.map((y) => {
-    const b = budgets[y];
-    const g = b ? normalize(b, view, factorOf(y)).find((x) => x.key === gkey) : undefined;
-    let v = 0;
-    if (g) v = row == null ? g.total : (g.rows.find((r) => r.key === row)?.v ?? 0);
-    return { y, v };
-  });
+/** The compared series, resolved against this year's data. */
+type CompareTarget = { view: View; gkey: string; row: string | null; title: string; kicker: string };
+
+/** The series as an index: the first year with a value is 100. */
+function toIndex(points: Point[]): Point[] {
+  const base = points.find((p) => p.v > 0)?.v;
+  return points.map((p) => ({ y: p.y, v: base ? (p.v / base) * 100 : 0 }));
+}
+
+const fpctSigned = (pct: number) => `${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${NF1.format(Math.abs(pct))} %`;
+
+function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, fg, budget, compare, index, onCompare, onClearCompare, onToggleIndex, factorOf, nominal, priceNote, nominalNote }: FocusProps) {
+  const history = (v: View, k: string, r: string | null) =>
+    years.map((y) => {
+      const b = budgets[y];
+      const g = b ? normalize(b, v, factorOf(y)).find((x) => x.key === k) : undefined;
+      let val = 0;
+      if (g) val = r == null ? g.total : (g.rows.find((x) => x.key === r)?.v ?? 0);
+      return { y, v: val };
+    });
+  const points = history(view, gkey, row);
+  const cmpPoints = compare ? history(compare.view, compare.gkey, compare.row) : null;
   const { first, last, pct } = changeOver(points, nominal);
+  const cmpChange = cmpPoints ? changeOver(cmpPoints, nominal) : null;
   const dark = fg !== INK;
 
+  const indexed = index && cmpPoints != null;
+  const series: Series[] = [{ key: "a", label: title, points: indexed ? toIndex(points) : points }];
+  if (cmpPoints && compare) series.push({ key: "b", label: compare.title, points: indexed ? toIndex(cmpPoints) : cmpPoints, dash: true });
+
+  // The picker: a searchable dropdown under the "Jämför med…" button. It
+  // closes on a click outside, and focus returns to the button.
+  const [picking, setPicking] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasPicking = useRef(false);
+  useEffect(() => {
+    if (!picking && wasPicking.current) triggerRef.current?.focus({ preventScroll: true });
+    wasPicking.current = picking;
+    if (!picking) return;
+    const onDown = (e: PointerEvent) => {
+      if (!wrapRef.current?.contains(e.target as Node)) setPicking(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [picking]);
+  // The focused posting can't be compared with itself, nor with the current target.
+  const exclude = (h: SearchHit) =>
+    (h.gkey === gkey && (row == null ? h.id == null : h.key === row)) ||
+    (compare != null && h.gkey === compare.gkey && (compare.row == null ? h.id == null : h.key === compare.row));
+
   return (
-    <div className="panel focus" style={{ background: bg, color: fg, ["--grid-color" as string]: dark ? "rgba(255,255,255,0.22)" : "rgba(11,11,11,0.12)" }}>
+    <div
+      className={`panel focus${compare ? " compared" : ""}${picking ? " picking" : ""}`}
+      style={{ background: bg, color: fg, ["--panel-bg" as string]: bg, ["--grid-color" as string]: dark ? "rgba(255,255,255,0.22)" : "rgba(11,11,11,0.12)" }}
+    >
       <div className="content">
         <div className="top">
           <div className="heading">
             <span className="kicker">
               {kicker}
               {priceNote}
+              {indexed ? ` · index, ${points[0]?.y} = 100` : ""}
               {years.some(nominal) ? ` · ${nominalNote}` : ""}
             </span>
             <span className="name" lang="sv">
               {title}
             </span>
+            <div className="compare-wrap" ref={wrapRef}>
+              <div className="compare-row">
+                {compare ? (
+                  <>
+                    <span className="pill chip" title={compare.kicker}>
+                      <button
+                        ref={triggerRef}
+                        type="button"
+                        className="chip-main"
+                        aria-haspopup="dialog"
+                        aria-expanded={picking}
+                        aria-label={`Jämförs med ${compare.title}. Byt jämförelse`}
+                        onClick={() => setPicking((o) => !o)}
+                      >
+                        <Mark square />
+                        <span className="txt" lang="sv">
+                          {compare.title}
+                        </span>
+                      </button>
+                      <button type="button" className="chip-x" aria-label="Ta bort jämförelsen" onClick={onClearCompare}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden>
+                          <path d="M6 6l12 12M18 6L6 18" />
+                        </svg>
+                      </button>
+                    </span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={index}
+                      className={`pill${index ? " on" : ""}`}
+                      title="Visa båda serierna som index där första året är 100"
+                      onClick={onToggleIndex}
+                    >
+                      <span>Index</span>
+                    </button>
+                  </>
+                ) : (
+                  <button ref={triggerRef} type="button" className="pill" aria-haspopup="dialog" aria-expanded={picking} onClick={() => setPicking((o) => !o)}>
+                    <span>Jämför med …</span>
+                  </button>
+                )}
+              </div>
+              {picking && (
+                <ComparePicker
+                  budget={budget}
+                  exclude={exclude}
+                  onPick={(h) => {
+                    setPicking(false);
+                    onCompare(h);
+                  }}
+                  onClose={() => setPicking(false)}
+                />
+              )}
+            </div>
           </div>
           <div className="delta">
             <span className="kicker">
               {first.y}–{last.y}
             </span>
             <span className="pct">
-              {pct > 0 ? "+" : pct < 0 ? "−" : "±"}
-              {NF1.format(Math.abs(pct))} %
+              {compare && <Mark />}
+              {fpctSigned(pct)}
             </span>
-            <span className="abs">{signed(last.v - first.v)}</span>
+            {cmpChange ? (
+              <span className="abs">
+                <Mark square />
+                {fpctSigned(cmpChange.pct)}
+              </span>
+            ) : (
+              <span className="abs">{signed(last.v - first.v)}</span>
+            )}
           </div>
         </div>
         <LineChart
-          key={`${gkey}/${row ?? ""}`}
-          series={[{ key: "v", label: title, points }]}
+          key={`${gkey}/${row ?? ""}/${compare?.gkey ?? ""}/${compare?.row ?? ""}/${indexed}`}
+          series={series}
           years={years}
           year={year}
           nominal={nominal}
           paper={bg}
+          fmt={indexed ? FMT_INDEX : FMT_KR}
+          extra={cmpPoints ? (i) => `Skillnad: ${signed((points[i]?.v ?? 0) - (cmpPoints[i]?.v ?? 0))}` : undefined}
         />
       </div>
+    </div>
+  );
+}
+
+// ---- Compare picker: searchable dropdown for the second series ------------------
+
+type ComparePickerProps = {
+  budget: BudgetJson | undefined;
+  /** Hits that can't be picked (the focused posting itself). */
+  exclude: (h: SearchHit) => boolean;
+  onPick: (hit: SearchHit) => void;
+  onClose: () => void;
+};
+
+function ComparePicker({ budget, exclude, onPick, onClose }: ComparePickerProps) {
+  const index = useMemo(() => (budget ? buildIndex(budget) : []), [budget]);
+  const [q, setQ] = useState("");
+  const hits = useMemo(() => runSearch(index, q, 40).filter((h) => !exclude(h)), [index, q]);
+  const [active, setActive] = useState(0);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => setActive(0), [q]);
+  useEffect(() => {
+    listRef.current?.querySelector<HTMLElement>(".result.active")?.scrollIntoView({ block: "nearest" });
+  }, [active, hits]);
+
+  const onKey = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((a) => Math.min(hits.length - 1, a + 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((a) => Math.max(0, a - 1));
+    } else if (e.key === "Enter" && hits[active]) {
+      e.preventDefault();
+      onPick(hits[active]!);
+    } else if (e.key === "Escape") {
+      // Ours: the app's Esc handler must not also unfocus the posting.
+      e.preventDefault();
+      e.stopPropagation();
+      onClose();
+    }
+  };
+
+  return (
+    <div className="picker" role="dialog" aria-label="Jämför med">
+      <div className="search-head">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M20 20l-3.5-3.5" />
+        </svg>
+        <input
+          type="search"
+          value={q}
+          placeholder="Sök anslag, inkomsttitel eller område …"
+          aria-label="Sök något att jämföra med"
+          autoComplete="off"
+          autoFocus
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={onKey}
+        />
+      </div>
+      {q.trim() === "" ? (
+        <p className="search-hint">Skriv för att söka. Pil upp/ner och Enter väljer, Esc stänger.</p>
+      ) : hits.length === 0 ? (
+        <p className="search-hint">Inga träffar för ”{q.trim()}”.</p>
+      ) : (
+        <div className="results" role="listbox" aria-label="Träffar" ref={listRef}>
+          {hits.map((h, i) => (
+            <button
+              key={`${h.gkey}/${h.id ?? ""}`}
+              type="button"
+              role="option"
+              aria-selected={i === active}
+              className={`result${i === active ? " active" : ""}`}
+              onMouseEnter={() => setActive(i)}
+              onClick={() => onPick(h)}
+            >
+              <span className="swatch" style={{ background: h.view === "rev" ? "var(--revenue)" : "var(--expense)" }} />
+              <span className="r-main">
+                <span className="r-title">{h.title}</span>
+                <span className="r-sub">
+                  {h.id == null
+                    ? h.view === "rev" ? "Inkomsttyp" : "Utgiftsområde"
+                    : `${h.groupCode} · ${h.groupTitle} · ${h.view === "rev" ? "Inkomsttitel" : "Anslag"} ${h.id}`}
+                </span>
+              </span>
+              <span className="r-val">{fmd(h.v)}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -845,6 +1080,9 @@ function App() {
   const [itemKey, setItemKey] = useState<string | null>(null);
   const [pendingItem, setPendingItem] = useState<number | null>(initialRoute.item);
   const [realWanted, setReal] = useState(initialRoute.real);
+  /** Comparison target as in the URL; resolved against the year's data below. */
+  const [cmp, setCmp] = useState<Compare | null>(initialRoute.cmp);
+  const [indexWanted, setIndex] = useState(initialRoute.index);
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -916,6 +1154,8 @@ function App() {
     setItemKey(null);
     setPendingItem(r.item);
     setReal(r.real);
+    setCmp(r.cmp);
+    setIndex(r.index);
     setQ(r.q);
     setHover(null);
   };
@@ -927,7 +1167,7 @@ function App() {
     return () => window.removeEventListener("popstate", onPop);
   });
 
-  // Esc: unfocus posting → leave Övriga → back to top level.
+  // Esc: drop the comparison → unfocus posting → leave Övriga → back to top level.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
@@ -935,6 +1175,7 @@ function App() {
       if (zoomKey != null) return setZoomKey(null);
       if (mode === "about") return showOverview();
       if (mode === "search") return q ? setQ("") : showOverview();
+      if (cmp != null) return setCmp(null);
       if (itemKey != null || pendingItem != null) {
         setItemKey(null);
         setPendingItem(null);
@@ -944,13 +1185,15 @@ function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [menuOpen, zoomKey, mode, q, itemKey, pendingItem, rest]);
+  }, [menuOpen, zoomKey, mode, q, cmp, itemKey, pendingItem, rest]);
   // A zoomed tile belongs to one level; leave it when the level changes.
   useEffect(() => setZoomKey(null), [mode, view, year, uo, rest]);
 
+  // A comparison belongs to the focused posting: leaving it drops the comparison.
   const clearFocus = () => {
     setItemKey(null);
     setPendingItem(null);
+    setCmp(null);
   };
 
   function showOverview() {
@@ -986,6 +1229,20 @@ function App() {
     setRest(h.rest);
     setItemKey(h.key);
     setPendingItem(null);
+    setCmp(null);
+    setHover(null);
+  };
+
+  /** Draw a search hit as the second series in the focus graph. */
+  const pickCompare = (h: SearchHit) => {
+    trackEvent("compare_pick", { view: h.view, group: h.gkey, item: h.id ?? "" });
+    setCmp({ view: h.view, group: h.group, item: h.id });
+    setHover(null);
+  };
+
+  const toggleIndex = () => {
+    trackEvent("toggle_index", { enabled: !indexWanted });
+    setIndex(!indexWanted);
     setHover(null);
   };
 
@@ -1061,6 +1318,25 @@ function App() {
   const focusedRow = itemKey != null && group ? (group.rows.find((r) => r.key === itemKey) ?? null) : null;
   const itemId = focusedRow?.id ?? pendingItem;
 
+  // The comparison target, looked up in this year's data (rows are matched
+  // across years by key, so the URL's row id is resolved here).
+  const compareTarget = useMemo<CompareTarget | null>(() => {
+    if (!cmp || !B) return null;
+    const g = normalize(B, cmp.view).find((x) => x.key === groupKey(cmp.view, cmp.group));
+    if (!g) return null;
+    if (cmp.item == null) return { view: cmp.view, gkey: g.key, row: null, title: g.title, kicker: `${g.code} · ${COPY[cmp.view].kind}` };
+    const r = g.rows.find((x) => x.id === cmp.item);
+    return r ? { view: cmp.view, gkey: g.key, row: r.key, title: r.title, kicker: `${g.code} · ${g.title}` } : null;
+  }, [cmp, B]);
+  // A target from the URL that doesn't exist in this year's data: drop it.
+  useEffect(() => {
+    if (cmp && B && !compareTarget) setCmp(null);
+  }, [cmp, B, compareTarget]);
+  // The index view belongs to a comparison, as in the URL.
+  useEffect(() => {
+    if (cmp == null) setIndex(false);
+  }, [cmp]);
+
   // Keep the URL and the document title in step with what is on screen.
   const pageTitle =
     mode === "about"
@@ -1071,12 +1347,15 @@ function App() {
       ? "Inkomster och utgifter"
       : year == null
         ? T.label
-        : `${focusedRow ? `${focusedRow.title} · ` : ""}${group ? `${group.title}${rest ? " · Övriga" : ""}` : T.root} · ${T.label} ${year}`;
+        : `${focusedRow ? `${focusedRow.title} · ` : ""}${compareTarget ? `jämfört med ${compareTarget.title} · ` : ""}${group ? `${group.title}${rest ? " · Övriga" : ""}` : T.root} · ${T.label} ${year}`;
   const synced = useRef<string | null>(null);
   const tracked = useRef<string | null>(null);
   useEffect(() => {
     if (year == null) return;
-    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, q }, latest);
+    const url = buildUrl(
+      { mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, cmp: group ? cmp : null, index: indexWanted, q },
+      latest,
+    );
     const current = window.location.pathname + window.location.search;
     if (url !== current) {
       // The first sync only normalises the URL we were opened with, and typing
@@ -1091,7 +1370,7 @@ function App() {
     if (tracked.current !== page) trackPageView(page, mode === "search" ? "Sök" : pageTitle);
     tracked.current = page;
     synced.current = url;
-  }, [mode, view, year, group, rest, itemId, real, q, latest, pageTitle]);
+  }, [mode, view, year, group, rest, itemId, real, cmp, indexWanted, q, latest, pageTitle]);
 
   // Items at the current drill level.
   let items: Item[] = [];
@@ -1134,6 +1413,7 @@ function App() {
       onClick: () => {
         setItemKey((k) => (k === r.key ? null : r.key));
         setPendingItem(null);
+        setCmp(null);
         setHover(null);
       },
     }));
@@ -1407,6 +1687,12 @@ function App() {
             title={focusedRow ? focusedRow.title : group.title}
             bg={panelColor.bg}
             fg={panelColor.fg}
+            budget={B}
+            compare={compareTarget}
+            index={indexWanted}
+            onCompare={pickCompare}
+            onClearCompare={() => setCmp(null)}
+            onToggleIndex={toggleIndex}
             {...prices}
           />
         )}
