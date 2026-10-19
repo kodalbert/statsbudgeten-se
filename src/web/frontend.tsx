@@ -637,7 +637,10 @@ type TileProps = {
   h: number;
   bg: string;
   fg: string;
-  share: string;
+  /** The headline figure, in the unit picked in the menu. */
+  big: string;
+  /** The other reading of the same amount, shown small below. */
+  small: string;
   info: Info;
   hovered: boolean;
   focused: boolean;
@@ -650,7 +653,7 @@ type TileProps = {
 /** A tile this small can't carry its label; the first click zooms it instead of acting. */
 const readable = (w: number, h: number) => w > 84 && h > 54;
 
-function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, onHover, onActivate }: TileProps) {
+function Tile({ it, rect, w, h, bg, fg, big, small, info, hovered, focused, zoomed, onHover, onActivate }: TileProps) {
   const minD = Math.min(w, h);
   const area = w * h;
   const showLabel = zoomed || readable(w, h);
@@ -696,9 +699,9 @@ function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, o
       </span>
       <span className="figures" style={{ opacity: showValue ? 1 : 0 }}>
         <span className="share" style={{ fontSize: shareSize }}>
-          {share}
+          {big}
         </span>
-        <span className="value">{fmd(it.v)}</span>
+        <span className="value">{small}</span>
       </span>
     </div>
   );
@@ -1634,6 +1637,10 @@ function App() {
               }
               const shareOfParent = (it.v / parentTotal) * 100;
               const shareOfAll = (it.v / gross) * 100;
+              // The big figure follows the unit in the menu; the other reading goes below it.
+              const shareText = fpct(group ? shareOfParent : shareOfAll);
+              const [big, small] =
+                unit === "kr" ? [fmd(it.v), shareText] : [fpct(year != null ? display.toUnit(it.v, year) : 0), fmd(it.v)];
               const tileInfo: Info = {
                 title: `${it.code ? `${it.code} · ` : ""}${it.label}`,
                 value: fmd(it.v),
@@ -1673,7 +1680,8 @@ function App() {
                   h={h}
                   bg={bg}
                   fg={fg}
-                  share={fpct(group ? shareOfParent : shareOfAll)}
+                  big={big}
+                  small={small}
                   info={tileInfo}
                   hovered={hover?.title === tileInfo.title}
                   focused={!!focusedRow && it.key === focusedRow.key}
