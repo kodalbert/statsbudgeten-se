@@ -42,6 +42,7 @@ gets a history line chart. The URL mirrors what is on screen (`src/web/routes.ts
 | `/om` | About page, written in `content/om.md` |
 | `…?year=2024` | Budget year (omitted for the latest year) |
 | `…?inflation=1` | Amounts adjusted for inflation |
+| `…?andel=inkomster` | Graphs in percent of the year's revenues (`andel=utgifter`: of expenses) |
 | `…?jamfor=inkomster/1000/1111` | A second posting (or area: `jamfor=utgifter/4`) drawn in the focus graph for comparison |
 | `…?index=1` | …both series as an index, first year = 100 |
 

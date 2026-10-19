@@ -15,7 +15,7 @@ import { initAnalytics, trackEvent, trackPageView } from "./analytics";
 import { aboutContent } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
-import { buildUrl, groupKey, groupNumber, parseRoute, type Compare, type Mode, type View } from "./routes";
+import { buildUrl, groupKey, groupNumber, parseRoute, type Compare, type Mode, type Unit, type View } from "./routes";
 import "./styles.css";
 
 /**
@@ -56,6 +56,7 @@ const PAPER = "#fcfcfb";
 
 const NF1 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const NF0 = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 });
+const NF2 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 /** Amounts are in tkr; 1 mdkr = 1e6 tkr. */
 const fmd = (tkr: number) => {
@@ -69,6 +70,51 @@ const signed = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±") + fmd(Math.ab
 /** Exact amount in tkr, e.g. "1 543 317 501 tkr". */
 const ftkr = (tkr: number) => `${NF0.format(Math.round(tkr))} tkr`;
 const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±");
+
+/** How a graph writes its values: in kronor (tkr) or in percent of a year's total. */
+type Fmt = {
+  /** Compact, for dot labels and headlines. */
+  short: (v: number) => string;
+  /** Exact, for the info box and screen readers. */
+  exact: (v: number) => string;
+  /** Gridline label for value v on an axis with the given step. */
+  grid: (v: number, step: number) => string;
+  /** Change from one year to the next, with the previous value for a relative figure. */
+  diff: (d: number, prev: number) => string;
+  /** Smallest headroom above the data, in the value's unit. */
+  minPad: number;
+};
+
+const FMT_KR: Fmt = {
+  short: fmd,
+  exact: ftkr,
+  grid: (v, step) => (step >= 1e6 ? NF0 : NF1).format(v / 1e6),
+  diff: (d, prev) => `${sign(d)}${ftkr(Math.abs(d))}${prev ? ` (${sign(d)}${NF1.format(Math.abs((d / prev) * 100))} %)` : ""}`,
+  minPad: 1,
+};
+
+const FMT_PCT: Fmt = {
+  short: (v) => `${NF1.format(v)} %`,
+  exact: (v) => `${NF2.format(v)} %`,
+  grid: (v, step) => `${(step >= 1 ? NF0 : NF1).format(v)} %`,
+  diff: (d) => `${sign(d)}${NF2.format(Math.abs(d))} procentenheter`,
+  minPad: 0.05,
+};
+
+/** Both series as an index, first year = 100: the compare view. */
+const FMT_INDEX: Fmt = {
+  short: (v) => NF0.format(v),
+  exact: (v) => NF1.format(v),
+  grid: (v) => NF0.format(v),
+  diff: (d, prev) => `${sign(d)}${NF1.format(Math.abs(d))}${prev ? ` (${sign(d)}${NF1.format(Math.abs((d / prev) * 100))} %)` : ""}`,
+  minPad: 1,
+};
+
+const UNITS: { k: Unit; label: string; note: string }[] = [
+  { k: "kr", label: "kr", note: "" },
+  { k: "rev", label: "% av inkomster", note: " · % av inkomsterna" },
+  { k: "exp", label: "% av utgifter", note: " · % av utgifterna" },
+];
 
 // ---- Data model ---------------------------------------------------------------
 
@@ -197,6 +243,16 @@ type Prices = {
   nominalNote: string;
 };
 
+/** The unit the graphs are drawn in, see the `andel` query parameter. */
+type Display = {
+  unit: Unit;
+  /** An amount in tkr for year y, converted to the unit. */
+  toUnit: (v: number, y: number) => number;
+  fmt: Fmt;
+  /** Kicker suffix naming the unit, empty for kronor. */
+  unitNote: string;
+};
+
 type Item = {
   key: string;
   id: number | null;
@@ -231,18 +287,6 @@ type Point = { y: number; v: number };
 /** `dash` draws the series dashed with square dots: the compared series in the focus graph. */
 type Series = { key: string; points: Point[]; color?: string; label?: string; dash?: boolean };
 
-/** How a graph writes its values: in kronor, or as an index with the first year = 100. */
-type ValueFmt = {
-  /** Compact, for dot labels. */
-  short: (v: number) => string;
-  /** Exact, for the info box and screen readers. */
-  exact: (v: number) => string;
-  /** Gridline label for value v on an axis with the given step. */
-  grid: (v: number, step: number) => string;
-};
-const FMT_KR: ValueFmt = { short: fmd, exact: ftkr, grid: (v, step) => (step >= 1e6 ? NF0 : NF1).format(v / 1e6) };
-const FMT_INDEX: ValueFmt = { short: (v) => NF0.format(v), exact: (v) => NF1.format(v), grid: (v) => NF0.format(v) };
-
 /** Series marker: a dot, or a square for the compared series. */
 const Mark = ({ square, color }: { square?: boolean; color?: string }) => <span className={`mk${square ? " sq" : ""}`} style={{ background: color }} aria-hidden />;
 
@@ -255,21 +299,19 @@ const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 90);
  * plus a small headroom and is not snapped, so the plot fills the panel
  * instead of leaving an empty band up to the next round number.
  */
-function niceScale(values: number[], label: ValueFmt["grid"]) {
+function niceScale(values: number[], minPad: number) {
   const mn = Math.min(...values);
   const mx = Math.max(...values);
-  const pad = Math.max((mx - mn) * 0.1, mx * 0.04, 1);
+  const pad = Math.max((mx - mn) * 0.1, mx * 0.04, minPad);
   const hi = mx + pad;
   const raw = (hi - Math.max(0, mn - pad)) / 5;
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
   const lo = Math.max(0, Math.floor((mn - pad) / step) * step);
   const Y = (v: number) => 100 - ((v - lo) / (hi - lo || 1)) * 100;
-  const grid: { top: string; label: string }[] = [];
-  for (let v = lo; v <= hi; v += step) {
-    grid.push({ top: `${Y(v)}%`, label: label(v, step) });
-  }
-  return { Y, grid };
+  const grid: { top: string; v: number }[] = [];
+  for (let v = lo; v <= hi + step * 1e-9; v += step) grid.push({ top: `${Y(v)}%`, v });
+  return { Y, grid, step };
 }
 
 /** True one frame after mount, to drive the enter transitions. */
@@ -298,20 +340,20 @@ type LineChartProps = {
   paper: string;
   /** Extra line at the bottom of the info box for year index i, e.g. the saldo. */
   extra?: (i: number) => string | null;
-  /** Value format; kronor unless given. */
-  fmt?: ValueFmt;
+  /** The points are already in this unit; `fmt` only writes them. */
+  fmt: Fmt;
 };
 
 /**
  * Line chart with an info box: hovering a year's dot or label shows the exact
  * figures and the change from the previous year; clicking pins the box.
  */
-function LineChart({ series, years, year, nominal, paper, extra, fmt = FMT_KR }: LineChartProps) {
+function LineChart({ series, years, year, nominal, paper, extra, fmt }: LineChartProps) {
   const open = useRevealed();
   const [hoverYear, setHoverYear] = useState<number | null>(null);
   const [pinnedYear, setPinnedYear] = useState<number | null>(null);
   const n = years.length;
-  const { Y, grid } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.grid);
+  const { Y, grid, step } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad);
   const pts = (s: Series) => s.points.map((p, i) => `${X(i, n).toFixed(2)},${Y(p.v).toFixed(2)}`).join(" ");
   const selIndex = Math.max(0, years.indexOf(year));
   // With several series, each year's highest value is labelled above its dot
@@ -357,7 +399,6 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt = FMT_KR }:
           const v = s.points[i]?.v ?? 0;
           const prev = prevYear != null ? (s.points[i - 1]?.v ?? 0) : null;
           const d = prev != null ? v - prev : null;
-          const pct = d != null && prev ? (d / prev) * 100 : null;
           return (
             <div className="ib-row" key={s.key}>
               {series.length > 1 && (
@@ -367,9 +408,7 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt = FMT_KR }:
                 </span>
               )}
               <span className="ib-val">{fmt.exact(v)}</span>
-              <span className="ib-diff">
-                {d != null ? `${sign(d)}${fmt.exact(Math.abs(d))}${pct != null ? ` (${sign(pct)}${NF1.format(Math.abs(pct))} %)` : ""}${mixed ? "*" : ""}` : "första året i serien"}
-              </span>
+              <span className="ib-diff">{d != null && prev != null ? `${fmt.diff(d, prev)}${mixed ? "*" : ""}` : "första året i serien"}</span>
             </div>
           );
         })}
@@ -382,7 +421,7 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt = FMT_KR }:
     <div className="chart" onClick={() => setPinnedYear(null)}>
       {grid.map((g) => (
         <div key={g.top} className="gridline" style={{ top: g.top }}>
-          <span>{g.label}</span>
+          <span>{fmt.grid(g.v, step)}</span>
         </div>
       ))}
       {series.length > 1 && <div className="band" style={{ left: `${X(selIndex, n)}%` }} />}
@@ -466,7 +505,7 @@ function changeOver(points: Point[], nominal: (y: number) => boolean) {
 
 // ---- Overview: inkomster vs utgifter per year ----------------------------------
 
-type OverviewProps = Prices & {
+type OverviewProps = Prices & Display & {
   years: number[];
   budgets: Record<number, BudgetJson>;
   year: number;
@@ -477,14 +516,18 @@ const SIDES = [
   { k: "rev", label: "Inkomster", color: "var(--revenue)" },
 ] as const;
 
-function Overview({ years, budgets, year, factorOf, nominal, priceNote, nominalNote }: OverviewProps) {
+function Overview({ years, budgets, year, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: OverviewProps) {
+  // A share is the same at any price level, so the price notes only apply in kronor.
+  const nominal = unit === "kr" ? nominalKr : () => false;
+  const priceNote = unit === "kr" ? priceNoteKr : "";
   const totals = years.map((y) => {
     const b = budgets[y];
     const f = factorOf(y);
-    return { y, exp: (b?.expensesTotal ?? 0) * f, rev: (b?.revenuesTotal ?? 0) * f };
+    return { y, exp: toUnit((b?.expensesTotal ?? 0) * f, y), rev: toUnit((b?.revenuesTotal ?? 0) * f, y) };
   });
   const sel = totals.find((t) => t.y === year) ?? totals[totals.length - 1]!;
   const saldo = sel.rev - sel.exp;
+  const fsaldo = (d: number) => `${sign(d)}${fmt.short(Math.abs(d))}`;
 
   return (
     <div className="panel overview" style={{ background: PAPER, color: INK, ["--grid-color" as string]: "rgba(11,11,11,0.12)" }}>
@@ -493,6 +536,7 @@ function Overview({ years, budgets, year, factorOf, nominal, priceNote, nominalN
           <div className="heading">
             <span className="kicker">
               Statens budget · {years[0]}–{years[years.length - 1]}
+              {unitNote}
               {priceNote}
             </span>
             <span className="name" lang="sv">
@@ -510,7 +554,7 @@ function Overview({ years, budgets, year, factorOf, nominal, priceNote, nominalN
           <div className="delta">
             <span className="kicker">Saldo {sel.y}</span>
             <span className="pct" style={{ color: saldo < 0 ? "var(--revenue)" : "var(--expense)" }}>
-              {signed(saldo)}
+              {fsaldo(saldo)}
             </span>
             <span className="abs">{saldo < 0 ? "Underskott – lånebehov" : saldo > 0 ? "Överskott" : "Balans"}</span>
           </div>
@@ -521,10 +565,11 @@ function Overview({ years, budgets, year, factorOf, nominal, priceNote, nominalN
           year={year}
           nominal={nominal}
           paper={PAPER}
+          fmt={fmt}
           extra={(i) => {
             const t = totals[i]!;
             const d = t.rev - t.exp;
-            return `Saldo ${sign(d)}${ftkr(Math.abs(d))} · ${d < 0 ? "underskott" : d > 0 ? "överskott" : "balans"}`;
+            return `Saldo ${sign(d)}${fmt.exact(Math.abs(d))} · ${d < 0 ? "underskott" : d > 0 ? "överskott" : "balans"}`;
           }}
         />
         <div className="note">{years.some(nominal) ? nominalNote : ""}</div>
@@ -535,7 +580,7 @@ function Overview({ years, budgets, year, factorOf, nominal, priceNote, nominalN
 
 // ---- Focus panel: history of the current group or focused posting -------------
 
-type FocusProps = Prices & {
+type FocusProps = Prices & Display & {
   years: number[];
   budgets: Record<number, BudgetJson>;
   year: number;
@@ -566,22 +611,34 @@ function toIndex(points: Point[]): Point[] {
   return points.map((p) => ({ y: p.y, v: base ? (p.v / base) * 100 : 0 }));
 }
 
-const fpctSigned = (pct: number) => `${pct > 0 ? "+" : pct < 0 ? "−" : "±"}${NF1.format(Math.abs(pct))} %`;
+const fpctSigned = (pct: number) => `${sign(pct)}${NF1.format(Math.abs(pct))} %`;
 
-function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, fg, budget, compare, index, onCompare, onClearCompare, onToggleIndex, factorOf, nominal, priceNote, nominalNote }: FocusProps) {
+function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, fg, budget, compare, index, onCompare, onClearCompare, onToggleIndex, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: FocusProps) {
+  // A share is the same at any price level, so the price notes only apply in kronor.
+  const nominal = unit === "kr" ? nominalKr : () => false;
+  const priceNote = unit === "kr" ? priceNoteKr : "";
   const history = (v: View, k: string, r: string | null) =>
     years.map((y) => {
       const b = budgets[y];
       const g = b ? normalize(b, v, factorOf(y)).find((x) => x.key === k) : undefined;
       let val = 0;
       if (g) val = r == null ? g.total : (g.rows.find((x) => x.key === r)?.v ?? 0);
-      return { y, v: val };
+      return { y, v: toUnit(val, y) };
     });
   const points = history(view, gkey, row);
   const cmpPoints = compare ? history(compare.view, compare.gkey, compare.row) : null;
   const { first, last, pct } = changeOver(points, nominal);
   const cmpChange = cmpPoints ? changeOver(cmpPoints, nominal) : null;
   const dark = fg !== INK;
+  // In kronor the headline is the relative change with the amount below; in
+  // percent it is the change in percentage points, with the two shares below.
+  const d = last.v - first.v;
+  const delta =
+    unit === "kr"
+      ? { big: `${sign(pct)}${NF1.format(Math.abs(pct))} %`, small: signed(d) }
+      : { big: `${sign(d)}${NF1.format(Math.abs(d))}`, small: `procentenheter · ${fmt.short(first.v)} → ${fmt.short(last.v)}` };
+  /** One headline per series when two are compared: relative change, or percentage points. */
+  const headline = (p: number, dd: number) => (unit === "kr" ? fpctSigned(p) : `${sign(dd)}${NF1.format(Math.abs(dd))} procentenheter`);
 
   const indexed = index && cmpPoints != null;
   const series: Series[] = [{ key: "a", label: title, points: indexed ? toIndex(points) : points }];
@@ -618,6 +675,7 @@ function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, 
           <div className="heading">
             <span className="kicker">
               {kicker}
+              {unitNote}
               {priceNote}
               {indexed ? ` · index, ${points[0]?.y} = 100` : ""}
               {years.some(nominal) ? ` · ${nominalNote}` : ""}
@@ -684,17 +742,22 @@ function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, 
             <span className="kicker">
               {first.y}–{last.y}
             </span>
-            <span className="pct">
-              {compare && <Mark />}
-              {fpctSigned(pct)}
-            </span>
             {cmpChange ? (
-              <span className="abs">
-                <Mark square />
-                {fpctSigned(cmpChange.pct)}
-              </span>
+              <>
+                <span className="pct">
+                  <Mark />
+                  {headline(pct, d)}
+                </span>
+                <span className="abs">
+                  <Mark square />
+                  {headline(cmpChange.pct, cmpChange.last.v - cmpChange.first.v)}
+                </span>
+              </>
             ) : (
-              <span className="abs">{signed(last.v - first.v)}</span>
+              <>
+                <span className="pct">{delta.big}</span>
+                <span className="abs">{delta.small}</span>
+              </>
             )}
           </div>
         </div>
@@ -705,8 +768,15 @@ function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, 
           year={year}
           nominal={nominal}
           paper={bg}
-          fmt={indexed ? FMT_INDEX : FMT_KR}
-          extra={cmpPoints ? (i) => `Skillnad: ${signed((points[i]?.v ?? 0) - (cmpPoints[i]?.v ?? 0))}` : undefined}
+          fmt={indexed ? FMT_INDEX : fmt}
+          extra={
+            cmpPoints
+              ? (i) => {
+                  const gap = (points[i]?.v ?? 0) - (cmpPoints[i]?.v ?? 0);
+                  return `Skillnad: ${sign(gap)}${unit === "kr" ? fmd(Math.abs(gap)) : `${NF2.format(Math.abs(gap))} procentenheter`}`;
+                }
+              : undefined
+          }
         />
       </div>
     </div>
@@ -1083,9 +1153,15 @@ function App() {
   /** Comparison target as in the URL; resolved against the year's data below. */
   const [cmp, setCmp] = useState<Compare | null>(initialRoute.cmp);
   const [indexWanted, setIndex] = useState(initialRoute.index);
+  const [unit, setUnit] = useState<Unit>(initialRoute.unit);
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  /** The settings popover on desktop (inflation, year, unit). */
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   /** Key of a too-small tile that has been expanded in place, see `readable`. */
   const [zoomKey, setZoomKey] = useState<string | null>(null);
   const [rates, setRates] = useState<Record<string, number>>({});
@@ -1156,6 +1232,7 @@ function App() {
     setReal(r.real);
     setCmp(r.cmp);
     setIndex(r.index);
+    setUnit(r.unit);
     setQ(r.q);
     setHover(null);
   };
@@ -1172,6 +1249,7 @@ function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (menuOpen) return setMenuOpen(false);
+      if (settingsOpen) return setSettingsOpen(false);
       if (zoomKey != null) return setZoomKey(null);
       if (mode === "about") return showOverview();
       if (mode === "search") return q ? setQ("") : showOverview();
@@ -1185,9 +1263,77 @@ function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [menuOpen, zoomKey, mode, q, cmp, itemKey, pendingItem, rest]);
+  }, [menuOpen, settingsOpen, zoomKey, mode, q, cmp, itemKey, pendingItem, rest]);
+
+  // The settings popover closes on a click anywhere outside it.
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onDown = (e: PointerEvent) => {
+      if (!settingsRef.current?.contains(e.target as Node)) setSettingsOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [settingsOpen]);
   // A zoomed tile belongs to one level; leave it when the level changes.
   useEffect(() => setZoomKey(null), [mode, view, year, uo, rest]);
+
+  // The open menu is a modal sheet: the page behind it neither scrolls nor
+  // takes focus, focus starts at the close button and returns to the toggle,
+  // and widening the window past the phone layout dismisses it.
+  useEffect(() => {
+    if (!menuOpen) return;
+    document.documentElement.classList.add("menu-open");
+    sheetRef.current?.querySelector<HTMLElement>(".sheet-head button")?.focus({ preventScroll: true });
+    const desktop = window.matchMedia("(min-width: 721px)");
+    const onChange = () => desktop.matches && setMenuOpen(false);
+    desktop.addEventListener("change", onChange);
+    return () => {
+      document.documentElement.classList.remove("menu-open");
+      desktop.removeEventListener("change", onChange);
+      toggleRef.current?.focus({ preventScroll: true });
+    };
+  }, [menuOpen]);
+
+  // Swipe the sheet left to close it: it follows the finger, and lets go when
+  // dragged far or fast enough. Vertical movement is left to the scroll.
+  const swipe = useRef<{ x: number; y: number; t: number; axis: "x" | "y" | null } | null>(null);
+  const sheetTouch = {
+    onTouchStart: (e: React.TouchEvent) => {
+      const t = e.touches[0]!;
+      swipe.current = { x: t.clientX, y: t.clientY, t: performance.now(), axis: null };
+    },
+    onTouchMove: (e: React.TouchEvent) => {
+      const sw = swipe.current;
+      const el = sheetRef.current;
+      if (!sw || !el) return;
+      const t = e.touches[0]!;
+      const dx = t.clientX - sw.x;
+      const dy = t.clientY - sw.y;
+      if (sw.axis == null && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) sw.axis = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (sw.axis !== "x") return;
+      el.style.transition = "none";
+      el.style.transform = `translateX(${Math.min(0, dx)}px)`;
+    },
+    onTouchEnd: (e: React.TouchEvent) => {
+      const sw = swipe.current;
+      const el = sheetRef.current;
+      swipe.current = null;
+      if (!sw || !el) return;
+      el.style.transition = "";
+      el.style.transform = "";
+      if (sw.axis !== "x") return;
+      const dx = e.changedTouches[0]!.clientX - sw.x;
+      const speed = -dx / Math.max(1, performance.now() - sw.t);
+      if (dx < -el.clientWidth / 3 || (dx < -40 && speed > 0.5)) setMenuOpen(false);
+    },
+    onTouchCancel: () => {
+      swipe.current = null;
+      if (sheetRef.current) {
+        sheetRef.current.style.transition = "";
+        sheetRef.current.style.transform = "";
+      }
+    },
+  };
 
   // A comparison belongs to the focused posting: leaving it drops the comparison.
   const clearFocus = () => {
@@ -1287,6 +1433,20 @@ function App() {
   const { factorOf, nominal, priceNote, nominalNote } = prices;
   const f = year != null ? factorOf(year) : 1;
 
+  // Graph unit: kronor, or percent of the year's total revenues or expenses.
+  // Amounts arrive price-adjusted, so the total is adjusted the same way.
+  const display: Display = {
+    unit,
+    toUnit: (v, y) => {
+      if (unit === "kr") return v;
+      const b = budgets[y];
+      const total = (unit === "rev" ? (b?.revenuesTotal ?? 0) : (b?.expensesTotal ?? 0)) * factorOf(y);
+      return total ? (v / total) * 100 : 0;
+    },
+    fmt: unit === "kr" ? FMT_KR : FMT_PCT,
+    unitNote: UNITS.find((u) => u.k === unit)?.note ?? "",
+  };
+
   const all = useMemo(() => (B ? normalize(B, view, f) : []), [B, view, f]);
   const total = B ? (rev ? B.revenuesTotal : B.expensesTotal) * f : 0;
   const groups = all.filter((g) => g.total > 0).sort((a, b) => b.total - a.total);
@@ -1353,7 +1513,7 @@ function App() {
   useEffect(() => {
     if (year == null) return;
     const url = buildUrl(
-      { mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, cmp: group ? cmp : null, index: indexWanted, q },
+      { mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, cmp: group ? cmp : null, index: indexWanted, q },
       latest,
     );
     const current = window.location.pathname + window.location.search;
@@ -1370,7 +1530,7 @@ function App() {
     if (tracked.current !== page) trackPageView(page, mode === "search" ? "Sök" : pageTitle);
     tracked.current = page;
     synced.current = url;
-  }, [mode, view, year, group, rest, itemId, real, cmp, indexWanted, q, latest, pageTitle]);
+  }, [mode, view, year, group, rest, itemId, real, unit, cmp, indexWanted, q, latest, pageTitle]);
 
   // Items at the current drill level.
   let items: Item[] = [];
@@ -1448,6 +1608,7 @@ function App() {
     ? colorOf(focusItem, true)
     : { bg: group ? (COLOR_MODE === "färg" ? `oklch(0.80 0.09 ${hueOf[group.key]})` : "oklch(0.86 0.01 260)") : PAPER, fg: INK };
 
+  const saldoShown = B && year != null ? display.toUnit(B.revenuesTotal * f, year) - display.toUnit(B.expensesTotal * f, year) : 0;
   const base: Info = mode === "about"
     ? { title: "Om Statsbudgeten", hint: "Esc eller Översikt för att gå tillbaka" }
     : mode === "search"
@@ -1457,7 +1618,7 @@ function App() {
     : mode === "overview"
       ? {
           title: `Statens budget ${year}${year != null && nominal(year) ? "*" : ""}`,
-          value: `Saldo ${signed(B.revenuesTotal * f - B.expensesTotal * f)}`,
+          value: `Saldo ${sign(saldoShown)}${display.fmt.short(Math.abs(saldoShown))}`,
           share: `Utgifter ${fmd(B.expensesTotal * f)} · Inkomster ${fmd(B.revenuesTotal * f)}${priceNote}`,
           hint: year != null && nominal(year) ? nominalNote : "Hovra över ett år för exakta siffror",
         }
@@ -1487,6 +1648,7 @@ function App() {
           <span>Statsbudgeten</span>
         </span>
         <button
+          ref={toggleRef}
           type="button"
           className="menu-toggle"
           aria-expanded={menuOpen}
@@ -1505,25 +1667,30 @@ function App() {
           </svg>
         </button>
         <div
+          ref={sheetRef}
           className="menu-items"
           id="menu-items"
+          role={menuOpen ? "dialog" : undefined}
+          aria-modal={menuOpen || undefined}
+          aria-label="Meny"
           onClick={(e) => {
             // On mobile the menu slides in over the page: any choice closes it.
             if ((e.target as HTMLElement).closest("button")) setMenuOpen(false);
           }}
+          {...sheetTouch}
         >
-        <div className="sheet-head">
-          <span className="brand">
-          <Logo size={20} />
-          <span>Statsbudgeten</span>
-        </span>
-          <button type="button" className="icon-btn" aria-label="Stäng menyn" onClick={() => setMenuOpen(false)}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
-              <path d="M6 6l12 12M18 6L6 18" />
-            </svg>
-          </button>
-        </div>
-        <nav className="tabs" aria-label="Vy">
+          <div className="sheet-head">
+            <span className="brand">
+              <Logo size={20} />
+              <span>Statsbudgeten</span>
+            </span>
+            <button type="button" className="icon-btn" aria-label="Stäng menyn" onClick={() => setMenuOpen(false)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </div>
+          <nav className="tabs" aria-label="Vy">
           <button type="button" className={`tab${overview ? " active" : ""}`} aria-current={overview ? "page" : undefined} onClick={showOverview}>
             <span>Översikt</span>
           </button>
@@ -1552,49 +1719,100 @@ function App() {
           <button type="button" className={`tab${about ? " active" : ""}`} aria-current={about ? "page" : undefined} onClick={showAbout}>
             <span>Om</span>
           </button>
-        </nav>
-        {hasInflation && (
-          <button
-            type="button"
-            role="switch"
-            aria-checked={real}
-            className={`switch${real ? " on" : ""}`}
-            title={`Räkna om alla belopp till ${baseYear} års prisnivå (KPI)`}
-            onClick={() => {
-              trackEvent("toggle_inflation", { enabled: !real, base_year: baseYear ?? "" });
-              setReal(!real);
-              setHover(null);
-            }}
-          >
-            <span className="knob" aria-hidden />
-            <span>Justera för inflation</span>
-          </button>
-        )}
-        <div className="year-picker">
-          <span className="label" id="year-label">
-            Budgetår
-          </span>
-          <div className="seg" role="radiogroup" aria-labelledby="year-label">
-            {yrs.map((y) => (
-              <button
-                key={y}
-                type="button"
-                role="radio"
-                aria-checked={y === year}
-                className={y === year ? "active" : ""}
-                title={nominal(y) ? "Nominellt belopp, inflationsdata saknas" : undefined}
-                onClick={() => selectYear(y)}
-              >
-                {y}
-                {nominal(y) ? "*" : ""}
-              </button>
-            ))}
+          </nav>
+          <div className={`settings${settingsOpen ? " open" : ""}`} ref={settingsRef}>
+            <button
+              type="button"
+              className="settings-toggle"
+              aria-expanded={settingsOpen}
+              aria-controls="settings"
+              aria-label="Inställningar"
+              title="Inställningar"
+              onClick={() => setSettingsOpen((o) => !o)}
+            >
+              {year != null && (
+                <span className="now">
+                  {year}
+                  {nominal(year) ? "*" : ""}, i {UNITS.find((u) => u.k === unit)?.label}
+                </span>
+              )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" />
+              </svg>
+            </button>
+            <div className="popover" id="settings" role="group" aria-label="Inställningar">
+              {hasInflation && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={real}
+                  className={`switch${real ? " on" : ""}`}
+                  title={`Räkna om alla belopp till ${baseYear} års prisnivå (KPI)`}
+                  onClick={() => {
+                    trackEvent("toggle_inflation", { enabled: !real, base_year: baseYear ?? "" });
+                    setReal(!real);
+                    setHover(null);
+                  }}
+                >
+                  <span className="knob" aria-hidden />
+                  <span>Justera för inflation</span>
+                </button>
+              )}
+              <div className="pickers">
+                <div className="year-picker">
+                  <span className="label" id="year-label">
+                    Budgetår
+                  </span>
+                  <div className="seg" role="radiogroup" aria-labelledby="year-label">
+                    {yrs.map((y) => (
+                      <button
+                        key={y}
+                        type="button"
+                        role="radio"
+                        aria-checked={y === year}
+                        className={y === year ? "active" : ""}
+                        title={nominal(y) ? "Nominellt belopp, inflationsdata saknas" : undefined}
+                        onClick={() => selectYear(y)}
+                      >
+                        {y}
+                        {nominal(y) ? "*" : ""}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="year-picker unit-picker">
+                  <span className="label" id="unit-label">
+                    Visa
+                  </span>
+                  <div className="seg" role="radiogroup" aria-labelledby="unit-label">
+                    {UNITS.map((u) => (
+                      <button
+                        key={u.k}
+                        type="button"
+                        role="radio"
+                        aria-checked={u.k === unit}
+                        className={u.k === unit ? "active" : ""}
+                        title={u.k === "kr" ? "Belopp i kronor" : `Grafer i procent av årets ${u.k === "rev" ? "inkomster" : "utgifter"}`}
+                        onClick={() => {
+                          if (u.k === unit) return;
+                          trackEvent("toggle_unit", { unit: u.k });
+                          setUnit(u.k);
+                          setHover(null);
+                        }}
+                      >
+                        {u.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
-      <header className="crumb-row">
+      <header className="crumb-row" inert={menuOpen || undefined}>
         <nav className="crumbs" aria-label="Brödsmulor">
           {about ? (
             <span className="crumb">
@@ -1667,12 +1885,12 @@ function App() {
         </nav>
       </header>
 
-      <div className="stage">
+      <div className="stage" inert={menuOpen || undefined}>
         {about && <About />}
         {searching && <Search budget={B} year={year} q={q} onChange={setQ} onPick={pickHit} />}
 
         {overview && B && year != null && (
-          <Overview years={yrs} budgets={budgets} year={year} {...prices} />
+          <Overview years={yrs} budgets={budgets} year={year} {...prices} {...display} />
         )}
 
         {!overview && !about && !searching && group && year != null && multiYear && (
@@ -1694,6 +1912,7 @@ function App() {
             onClearCompare={() => setCmp(null)}
             onToggleIndex={toggleIndex}
             {...prices}
+            {...display}
           />
         )}
 
@@ -1765,7 +1984,7 @@ function App() {
         )}
       </div>
 
-      <footer className="info" aria-live="polite">
+      <footer className="info" aria-live="polite" inert={menuOpen || undefined}>
         <span className="title">{info.title}</span>
         <span className="value">{info.value}</span>
         <span className="share">{info.share}</span>

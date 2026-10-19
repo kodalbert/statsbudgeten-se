@@ -36,3 +36,6 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # design handoff (not part of the repo; contains demo data)
 design
 design.zip
+
+# worktrees created by Claude Code sessions
+.claude/worktrees

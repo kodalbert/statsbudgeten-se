@@ -151,6 +151,12 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 24px;
+}
 .year-picker {
   display: flex;
   align-items: center;
@@ -180,10 +186,104 @@ button {
   cursor: pointer;
   box-shadow: none;
 }
+.unit-picker .seg button {
+  white-space: nowrap;
+}
 .seg button.active {
   background: var(--surface);
   color: var(--ink);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+/* ---- Settings: cog button with a popover on desktop ---- */
+
+.settings {
+  position: relative;
+  margin-left: auto;
+}
+.settings-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 12px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--track);
+  color: var(--secondary);
+  cursor: pointer;
+}
+.settings-toggle:hover,
+.settings.open .settings-toggle {
+  color: var(--ink);
+}
+.settings-toggle .now {
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.settings-toggle svg {
+  transition: transform 0.4s var(--ease);
+}
+.settings.open .settings-toggle svg {
+  transform: rotate(60deg);
+}
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: 360px;
+  padding: 16px;
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--divider),
+    0 12px 40px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top right;
+  visibility: hidden;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s var(--ease),
+    visibility 0s linear 0.22s;
+}
+.settings.open .popover {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  transition:
+    opacity 0.18s ease,
+    transform 0.22s var(--ease);
+}
+.popover .switch {
+  align-self: flex-start;
+  margin-left: -4px;
+}
+.popover .pickers {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+.popover .year-picker {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.popover .year-picker .label {
+  font-weight: 600;
+}
+.popover .seg {
+  flex-wrap: wrap;
+}
+.popover .seg button {
+  flex: 1;
+  padding: 5px 8px;
+  white-space: nowrap;
 }
 
 /* ---- Inflation toggle ---- */
@@ -1025,7 +1125,13 @@ button {
   .menu-toggle {
     display: flex;
   }
-  /* Full-screen menu sliding in from the left. */
+  /* Full-screen menu sliding in from the left, over a page that is locked
+     and made inert while it is open. A swipe to the left closes it. */
+  html.menu-open,
+  html.menu-open body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
   .menu-items {
     display: flex;
     position: fixed;
@@ -1034,19 +1140,69 @@ button {
     flex-direction: column;
     align-items: stretch;
     gap: 24px;
-    padding: 10px 20px 24px;
+    padding: max(10px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
     background: var(--page);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.25);
     transform: translateX(-100%);
     visibility: hidden;
     transition:
       transform 0.35s var(--ease),
       visibility 0s linear 0.35s;
+    will-change: transform;
   }
   .menu.open .menu-items {
     transform: none;
     visibility: visible;
     transition: transform 0.35s var(--ease);
+  }
+  /* The items settle in just after the sheet, one after the other. */
+  .menu-items .sheet-head,
+  .menu-items .tabs,
+  .menu-items .switch,
+  .menu-items .pickers {
+    opacity: 0;
+    transform: translateX(-16px);
+    transition:
+      opacity 0.25s ease,
+      transform 0.3s var(--ease);
+  }
+  .menu.open .menu-items .sheet-head,
+  .menu.open .menu-items .tabs,
+  .menu.open .menu-items .switch,
+  .menu.open .menu-items .pickers {
+    opacity: 1;
+    transform: none;
+  }
+  .menu.open .menu-items .tabs {
+    transition-delay: 0.1s;
+  }
+  .menu.open .menu-items .switch {
+    transition-delay: 0.15s;
+  }
+  .menu.open .menu-items .pickers {
+    transition-delay: 0.2s;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-items,
+    .menu-items .sheet-head,
+    .menu-items .tabs,
+    .menu-items .switch,
+    .menu-items .pickers {
+      transition-duration: 0s;
+      transition-delay: 0s !important;
+    }
+  }
+  .settings,
+  .popover {
+    display: contents;
+    /* Visibility inherits through display: contents, so undo the closed-popover state. */
+    visibility: visible;
+  }
+  .settings-toggle {
+    display: none;
   }
   .menu-items .sheet-head {
     display: flex;
@@ -1075,10 +1231,22 @@ button {
     font-size: 16px;
     padding: 10px 16px 10px 10px;
   }
+  .menu-items .pickers {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 24px;
+  }
   .menu-items .year-picker {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+  .menu-items .unit-picker .seg {
+    width: 100%;
+  }
+  .menu-items .unit-picker .seg button {
+    flex: 1;
+    white-space: nowrap;
   }
   .menu-items .year-picker .label {
     font-size: 13px;

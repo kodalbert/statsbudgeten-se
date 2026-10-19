@@ -33,7 +33,7 @@ function listSources() {
   return [...budgets, ...others];
 }
 
-/** Favicon, app icons and the web manifest, from assets/. */
+/** Favicon, app icons, the social share image and the web manifest, from assets/. */
 const asset = (file: string, type: string) =>
   new Response(Bun.file(`${root}assets/${file}`), { headers: { "content-type": type, "cache-control": "public, max-age=86400" } });
 
@@ -52,6 +52,7 @@ const server = Bun.serve({
     "/icon-192.png": () => asset("icon-192.png", "image/png"),
     "/icon-512.png": () => asset("icon-512.png", "image/png"),
     "/icon-maskable-512.png": () => asset("icon-maskable-512.png", "image/png"),
+    "/social.png": () => asset("social.png", "image/png"),
     "/site.webmanifest": () => asset("site.webmanifest", "application/manifest+json"),
     "/sok": index,
     "/api/sources": () => Response.json(listSources()),
