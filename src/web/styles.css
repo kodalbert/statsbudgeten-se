@@ -629,7 +629,12 @@ dialog.share::backdrop {
 }
 .panel.focus {
   flex: 0 0 auto;
-  height: clamp(220px, 36vh, 340px);
+  height: clamp(244px, 38vh, 364px);
+}
+/* The compare picker hangs below the panel. */
+.panel.focus.picking {
+  overflow: visible;
+  z-index: 3;
 }
 .panel .content {
   position: absolute;
@@ -743,7 +748,7 @@ dialog.share::backdrop {
   position: absolute;
   top: -8px;
   bottom: -8px;
-  border-left: 1px dashed rgba(11, 11, 11, 0.3);
+  border-left: 1px dashed var(--grid-color, rgba(11, 11, 11, 0.3));
 }
 .panel .reveal {
   position: absolute;
@@ -783,6 +788,9 @@ dialog.share::backdrop {
 .panel .dot .mark {
   border-radius: 50%;
   border: 3px solid currentColor;
+}
+.panel .dot.sq .mark {
+  border-radius: 3px;
 }
 .panel .dot:focus-visible .mark {
   outline: 2px solid currentColor;
@@ -849,19 +857,20 @@ dialog.share::backdrop {
   align-items: baseline;
 }
 .panel .infobox.multi .ib-row {
-  grid-template-columns: 88px auto 1fr;
+  grid-template-columns: fit-content(190px) auto 1fr;
 }
 .panel .infobox .ib-label {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
   font-weight: 600;
   color: var(--secondary);
 }
-.panel .infobox .swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
+.panel .infobox .ib-label .txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .panel .infobox .ib-val {
   font-weight: 700;
@@ -877,6 +886,137 @@ dialog.share::backdrop {
   padding-top: 6px;
   border-top: 1px solid var(--divider);
   font-weight: 600;
+}
+
+/* Series markers: a dot for the focused series, a square for the compared one. */
+.mk {
+  display: inline-block;
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 0.05em;
+}
+.mk.sq {
+  border-radius: 2px;
+}
+.panel .delta .mk {
+  margin-right: 7px;
+}
+
+/* ---- Compare: a second series in the focus graph ---- */
+.panel .compare-wrap {
+  position: relative;
+  margin-top: 7px;
+}
+.panel .compare-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+.panel .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  background: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.45;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.panel .pill:hover,
+.panel .pill:focus-visible,
+.panel .pill[aria-expanded="true"] {
+  opacity: 1;
+}
+.panel .pill:focus-visible,
+.panel .chip-main:focus-visible,
+.panel .chip-x:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+.panel .chip:has(.chip-main:focus-visible) {
+  opacity: 1;
+}
+.panel .pill.on {
+  background: currentColor;
+  opacity: 1;
+}
+.panel .pill.on > * {
+  color: var(--panel-bg);
+}
+.panel .chip {
+  padding: 0 4px 0 0;
+  cursor: default;
+}
+.panel .chip-main {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 4px 3px 11px;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.panel .chip .txt {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 280px;
+}
+.panel .chip-x {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.panel .chip-x:hover {
+  background: rgba(127, 127, 127, 0.25);
+}
+.panel .picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 6;
+  width: min(460px, calc(100vw - 48px));
+  max-height: 360px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22);
+  text-align: left;
+}
+.panel .picker .search-head {
+  padding: 8px 14px;
+}
+.panel .picker .search-head input {
+  font-size: 16px;
+}
+.panel .picker .search-hint {
+  padding: 12px 14px 14px;
+  font-size: 13px;
+}
+.panel .picker .results {
+  padding: 4px 6px 8px;
 }
 
 .panel .note {
@@ -1308,7 +1448,26 @@ dialog.share::backdrop {
     padding: 12px 14px 10px;
   }
   .panel.focus {
-    height: clamp(200px, 32vh, 300px);
+    height: clamp(224px, 34vh, 324px);
+  }
+  /* Two series and a chip row need more room on a phone. */
+  .panel.focus.compared {
+    height: clamp(264px, 40vh, 364px);
+  }
+  .panel .chip .txt {
+    max-width: 170px;
+  }
+  /* The picker becomes a sheet at the bottom of the screen. */
+  .panel .picker {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: 12px;
+    z-index: 40;
+    width: auto;
+    max-height: 60vh;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   }
   .panel .name {
     font-size: 20px;
@@ -1333,7 +1492,8 @@ dialog.share::backdrop {
     overflow: hidden;
   }
   /* Two series don't leave room for every value label on a phone. */
-  .panel.overview .dot:not(.selected) .val {
+  .panel.overview .dot:not(.selected) .val,
+  .panel.compared .dot:not(.selected) .val {
     display: none;
   }
   /* The info box becomes a sheet at the bottom of the screen. */

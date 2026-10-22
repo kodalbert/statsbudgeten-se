@@ -70,6 +70,15 @@ export const FMT_PCT: Fmt = {
   minPad: 0.05,
 };
 
+/** Both series as an index, first year = 100: the compare view. */
+export const FMT_INDEX: Fmt = {
+  short: (v) => NF0.format(v),
+  exact: (v) => NF1.format(v),
+  grid: (v) => NF0.format(v),
+  diff: (d, prev) => `${sign(d)}${NF1.format(Math.abs(d))}${prev ? ` (${sign(d)}${NF1.format(Math.abs((d / prev) * 100))} %)` : ""}`,
+  minPad: 1,
+};
+
 export const UNITS: { k: Unit; label: string; note: string }[] = [
   { k: "kr", label: "kr", note: "" },
   { k: "rev", label: "% av inkomster", note: " · % av inkomsterna" },
@@ -281,7 +290,8 @@ export const readable = (w: number, h: number) => w > 84 && h > 54;
 // ---- Line chart scale ---------------------------------------------------------
 
 export type Point = { y: number; v: number };
-export type Series = { key: string; points: Point[]; color?: string; label?: string };
+/** `dash` draws the series dashed with square dots: the compared series in the focus graph. */
+export type Series = { key: string; points: Point[]; color?: string; label?: string; dash?: boolean };
 
 /** Chart x position in percent for point i of n, inset 5 %–95 %. */
 export const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 90);

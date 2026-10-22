@@ -51,7 +51,7 @@ export function canonicalPath(route: Route, data: Data): string {
 export function sitemapPaths(data: Data): string[] {
   const latest = data.years[0] ?? null;
   const paths = ["/", "/om"];
-  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, q: "" };
+  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, cmp: null, index: false, q: "" };
   for (const year of data.years) {
     const budget = data.budgets[year];
     if (!budget) continue;
@@ -199,7 +199,7 @@ export function prerender(route: Route, data: Data, about: Block[]): string {
       .map((y) => {
         const b = data.budgets[y];
         if (!b) return "";
-        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, q: "" };
+        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, cmp: null, index: false, q: "" };
         const d = b.revenuesTotal - b.expensesTotal;
         return `<tr><th>${y}</th><td>${link(buildUrl({ ...r, view: "exp" }, latest), fmd(b.expensesTotal))}</td><td>${link(buildUrl({ ...r, view: "rev" }, latest), fmd(b.revenuesTotal))}</td><td>${esc((d < 0 ? "−" : "+") + fmd(Math.abs(d)))}</td></tr>`;
       })
