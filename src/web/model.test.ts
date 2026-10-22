@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fmd, niceScale } from "./model";
+import { fmd, niceScale, placeItems, readable, type Item } from "./model";
 
 const values = (s: ReturnType<typeof niceScale>) => s.grid.map((g) => g.v);
 
@@ -77,5 +77,31 @@ describe("niceScale", () => {
         }
       }
     }
+  });
+});
+
+describe("placeItems", () => {
+  const item = (key: string, v: number): Item => ({ key, id: null, code: key, label: key, v, hue: 0, rank: 0 });
+
+  test("keeps every tile readable and lists the rest, largest first", () => {
+    const items = [item("a", 1000), item("b", 500), item("c", 3), item("d", 2), item("e", 1)];
+    const { placed, listed } = placeItems(items, 400, 300);
+    expect(placed.every((p) => readable(p.w, p.h))).toBe(true);
+    expect(placed.map((p) => p.it.key)).toEqual(["a", "b"]);
+    expect(listed.map((it) => it.key)).toEqual(["c", "d", "e"]);
+    // The tiles left fill the whole map.
+    expect(placed.reduce((s, p) => s + p.w * p.h, 0)).toBeCloseTo(400 * 300, 3);
+  });
+
+  test("lists nothing when everything fits", () => {
+    const { placed, listed } = placeItems([item("a", 2), item("b", 1)], 400, 300);
+    expect(placed).toHaveLength(2);
+    expect(listed).toEqual([]);
+  });
+
+  test("always keeps the largest item as a tile", () => {
+    const { placed, listed } = placeItems([item("a", 2), item("b", 1)], 10, 10);
+    expect(placed.map((p) => p.it.key)).toEqual(["a"]);
+    expect(listed.map((it) => it.key)).toEqual(["b"]);
   });
 });

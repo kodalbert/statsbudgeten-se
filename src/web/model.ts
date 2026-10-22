@@ -281,8 +281,25 @@ export function layout(items: Item[], W: number, H: number): Placed<Item>[] {
   return squarify(items.map((it) => ({ it, a: (it.v / sum) * W * H })), W, H);
 }
 
-/** A tile this small can't carry its label; the first click zooms it instead of acting. */
+/** A tile this small can't carry its label. */
 export const readable = (w: number, h: number) => w > 84 && h > 54;
+
+/**
+ * The items as tiles over W×H pixels, with the ones that come out too small
+ * to read moved to a list instead. Dropping items frees room for the rest,
+ * so the layout is redone until every tile left is readable. The largest item
+ * is always a tile, so the map is never empty.
+ */
+export function placeItems(items: Item[], W: number, H: number): { placed: Placed<Item>[]; listed: Item[] } {
+  const largest = items.reduce<Item | null>((m, it) => (m == null || it.v > m.v ? it : m), null);
+  let tiles = items;
+  for (;;) {
+    const placed = layout(tiles, W, H);
+    const small = new Set(placed.filter((p) => !readable(p.w, p.h) && p.it !== largest).map((p) => p.it.key));
+    if (small.size === 0) return { placed, listed: items.filter((it) => !tiles.includes(it)) };
+    tiles = tiles.filter((it) => !small.has(it.key));
+  }
+}
 
 // ---- Line chart scale ---------------------------------------------------------
 
