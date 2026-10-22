@@ -40,11 +40,26 @@ gets a history line chart. The URL mirrors what is on screen (`src/web/routes.ts
 | `/inkomster/1000/1111` | Inkomsttyp 1000 with inkomsttitel 1111 focused |
 | `/sok?q=försvar` | Search over areas and postings in the selected year |
 | `/om` | About page, written in `content/om.md` |
+| `/sitemap.xml`, `/robots.txt` | For search engines: every page of every year, generated from the data |
 | `…?year=2024` | Budget year (omitted for the latest year) |
 | `…?inflation=1` | Amounts adjusted for inflation |
 | `…?andel=inkomster` | Graphs in percent of the year's revenues (`andel=utgifter`: of expenses) |
 | `…?jamfor=inkomster/1000/1111` | A second posting (or area: `jamfor=utgifter/4`) drawn in the focus graph for comparison |
 | `…?index=1` | …both series as an index, first year = 100 |
+
+## Search engines
+
+The app renders in the browser, but every page is served with a head and body
+a crawler can use without JavaScript (`src/seo.ts`): the title, description and
+canonical URL for the view, Open Graph tags with a share image of the chart,
+JSON-LD (the site with its search box, breadcrumbs when drilled down), the icon
+links, and inside `#root` a static version of the page: its heading, its numbers
+as a table, and links to every page below it. The app replaces it on mount.
+The canonical URL drops the search query, the inflation toggle and the unit,
+and `/sitemap.xml` lists the canonical URL of every view, group and posting in
+every year. The icon links are added by the server rather than written in
+`index.html`, because Bun's HTML bundler tries to resolve every link href as a
+build asset.
 
 ## Data
 
@@ -76,6 +91,15 @@ SVG, without a charting library. The about page is a small Markdown subset
 (`src/markdown.ts`) parsed at bundle time by a Bun macro (`src/web/content.macro.ts`);
 the `[sources]` line becomes download links for the workbooks in `examples/`,
 which the server serves at `/examples/<file>`.
+
+Link previews show the chart the page shows: the server fills in the share tags
+(`og:title`, `og:description`, `og:image`) for each app URL and draws the image
+on demand at `/social/<page>.png`, for example `/social/utgifter/6.png?year=2024`.
+The image is the same model as the app (`src/web/model.ts`) written as SVG and
+rasterised with resvg (`src/social.ts`), using the bundled Inter font so it looks
+the same on every machine. The about and search pages use the static `/social.png`. The *Dela* button on
+every chart page offers the same image as a square, 4:5 or 9:16 (`?format=square`,
+`portrait`, `story`) for posting, through the system share sheet or as a download.
 
 Google Analytics is wired up in `src/web/analytics.ts` (measurement ID at the top
 of the file). It is not loaded on localhost. Each URL change is reported as a page
