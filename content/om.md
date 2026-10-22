@@ -18,7 +18,7 @@ Sajten är byggd med [Bun](https://bun.sh), React och TypeScript. Regeringens Ex
 
 ## Vem står bakom
 
-Statsbudgeten.se är byggd av mig i egen hög person. Du hittar mig på [proddalbert.se](https://proddalbert.se) och som @ProddAlbert i sociala medier, och du når mig på [albert@proddalbert.se](mailto:albert@proddalbert.se). Hör gärna av dig med fel, idéer eller frågor.
+Statsbudgeten.se är byggd av ProddAlbert. Du hittar honom på [proddalbert.se](https://proddalbert.se) och som @ProddAlbert i sociala medier, och du når honom bäst på [albert@proddalbert.se](mailto:albert@proddalbert.se).
 
 ## Källor
 
