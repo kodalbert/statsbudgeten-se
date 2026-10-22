@@ -10,6 +10,7 @@ import { HEIGHT, WIDTH, pageDescription, pageTitle, renderPng, routeForImage, so
 import { buildUrl, parseRoute } from "./web/routes";
 import { parseMarkdown } from "./markdown";
 import { HEAD_LINKS, canonicalPath, prerender, robotsTxt, sitemapXml, structuredData } from "./seo";
+import { createMcp } from "./mcp";
 
 const root = new URL("..", import.meta.url).pathname;
 
@@ -64,6 +65,10 @@ function loadData(): Promise<Data> {
   })();
   return dataPromise;
 }
+
+/** The MCP server at /mcp (src/mcp.ts), built once from the data. */
+let mcpPromise: Promise<ReturnType<typeof createMcp>> | null = null;
+const mcp = (req: Request) => (mcpPromise ??= loadData().then((data) => createMcp(data, SITE))).then((m) => m.fetch(req));
 
 /** Rendered share images by their URL, newest last; the oldest go when it is full. */
 const images = new Map<string, Uint8Array>();
@@ -195,6 +200,8 @@ const server = Bun.serve({
     // The bundled app page itself; `page` fetches it and fills in the share tags.
     "/__index": index,
     "/social/*": socialImage,
+    // Model Context Protocol over HTTP, for LLM clients (src/mcp.ts).
+    "/mcp": mcp,
     "/sitemap.xml": sitemap,
     "/robots.txt": robots,
     "/favicon.ico": () => asset("favicon.ico", "image/x-icon"),

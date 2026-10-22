@@ -41,6 +41,7 @@ gets a history line chart. The URL mirrors what is on screen (`src/web/routes.ts
 | `/sok?q=försvar` | Search over areas and postings in the selected year |
 | `/om` | About page, written in `content/om.md` (`![title](youtube url)` on its own line embeds a video) |
 | `/sitemap.xml`, `/robots.txt` | For search engines: every page of every year, generated from the data |
+| `/mcp` | [MCP](https://modelcontextprotocol.io) endpoint for LLM clients, see below |
 | `…?year=2024` | Budget year (omitted for the latest year) |
 | `…?inflation=1` | Amounts adjusted for inflation |
 | `…?andel=inkomster` | Graphs in percent of the year's revenues (`andel=utgifter`: of expenses) |
@@ -59,6 +60,52 @@ and `/sitemap.xml` lists the canonical URL of every view, group and posting in
 every year. The icon links are added by the server rather than written in
 `index.html`, because Bun's HTML bundler tries to resolve every link href as a
 build asset.
+
+## MCP server
+
+The same data is available to LLM clients over the Model Context Protocol at
+`https://statsbudgeten.se/mcp` (`src/mcp.ts`), so a model can look up a budget
+year, an utgiftsområde, a single anslag or how it has developed over the years,
+without scraping the site. Every result includes the URL of the page that shows
+it, for citation. It is served by the same Bun process as the site; there is no
+separate server or container to run.
+
+Connect from Claude Code:
+
+```bash
+claude mcp add --transport http statsbudgeten https://statsbudgeten.se/mcp
+```
+
+In Claude (web or desktop), add it under *Settings → Connectors → Add custom
+connector* with the same URL. Any client that speaks the Streamable HTTP
+transport works; the endpoint needs no authentication.
+
+| Tool | Does |
+|---|---|
+| `list_years` | The budget years the server has, the latest one, and the price level used for inflation adjustment |
+| `get_overview(year?)` | Totals for a year and every utgiftsområde and inkomsttyp with its total |
+| `get_area(uo, year?)` | One utgiftsområde with all of its anslag, largest first |
+| `get_revenue_type(code, year?)` | One inkomsttyp with all of its inkomsttitlar, largest first |
+| `search(query, year?, limit?)` | The site's search: case- and diacritic-insensitive, over areas and postings |
+| `get_history(view, group, id?, year?, inflation?)` | An area, type or single posting across every year, nominal and optionally in fixed prices |
+
+The raw JSON of every year and the inflation series are exposed as MCP
+resources (`statsbudgeten://budget/2026`, `statsbudgeten://inflation`). All
+amounts are in tkr, as everywhere else.
+
+The endpoint is a stateless Streamable HTTP server written against the protocol
+directly, without the MCP SDK (which would pull in Express and a few dozen
+packages for what is a handful of JSON-RPC methods). Everything a client sees
+is built once from the committed data when the server starts: the tool list,
+whose argument schemas enumerate the years and areas that actually exist, the
+resource list, and a search index per year. A POST carries one JSON-RPC
+message and gets the reply as JSON; GET and DELETE answer 405 since there is
+no server-to-client stream and no session. To try it without a client:
+
+```bash
+curl -s https://statsbudgeten.se/mcp -H 'content-type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"search","arguments":{"query":"försvar","limit":3}}}'
+```
 
 ## Data
 
