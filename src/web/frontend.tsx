@@ -751,8 +751,11 @@ type BudgetsProps = {
  */
 function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
   const list = [...years].sort((a, b) => b - a);
-  // The saldo bars share one scale, so their lengths compare across the years.
-  const maxSaldo = Math.max(1, ...list.map((y) => Math.abs((budgets[y]?.revenuesTotal ?? 0) - (budgets[y]?.expensesTotal ?? 0))));
+  // The saldo bars show the saldo as a share of the year's inkomster — a
+  // percentage compares across years where kronor would just show growth —
+  // and share one scale, so their lengths compare too.
+  const shareOf = (b: BudgetJson | undefined) => (b && b.revenuesTotal ? ((b.revenuesTotal - b.expensesTotal) / b.revenuesTotal) * 100 : 0);
+  const maxShare = Math.max(0.1, ...list.map((y) => Math.abs(shareOf(budgets[y]))));
   return (
     <div className="panel budgets">
       <div className="budgets-inner" lang="sv">
@@ -766,6 +769,7 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
             const b = budgets[y];
             const vote = VOTES[String(y)];
             const d = b ? b.revenuesTotal - b.expensesTotal : 0;
+            const share = shareOf(b);
             const href = buildUrl({ mode: "explore", view: "exp", year: y, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, latest);
             return (
               <li key={y} className="budget-entry">
@@ -793,13 +797,13 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
                   </span>
                   {b && <span className="b-totals">Utgifter {fmd(b.expensesTotal)} · Inkomster {fmd(b.revenuesTotal)}</span>}
                   {b && (
-                    <span className="b-balance" title={`Saldo ${sign(d)}${ftkr(Math.abs(d))}`}>
+                    <span className="b-balance" title={`Saldo ${sign(d)}${ftkr(Math.abs(d))} · ${fpct(Math.abs(share))} av årets inkomster`}>
                       <span className="b-bar" aria-hidden>
                         <span className="b-zero" />
                         <span
                           className="b-fill"
                           style={{
-                            width: `${(Math.abs(d) / maxSaldo) * 50}%`,
+                            width: `${(Math.abs(share) / maxShare) * 50}%`,
                             [d < 0 ? "right" : "left"]: "50%",
                             borderRadius: d < 0 ? "5px 0 0 5px" : "0 5px 5px 0",
                             background: d < 0 ? "var(--revenue)" : "var(--expense)",
