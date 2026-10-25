@@ -24,7 +24,7 @@ import { buildUrl, groupKey, type Route, type View } from "./web/routes";
 
 export const PROTOCOL_VERSIONS = ["2025-06-18", "2025-03-26", "2024-11-05"] as const;
 export const LATEST_PROTOCOL = PROTOCOL_VERSIONS[0];
-const SERVER_INFO = { name: "statsbudgeten", title: "Statsbudgeten.se", version: "1.0.0" };
+const SERVER_INFO = { name: "statsbudgeten", title: "Statsbudgeten.se", version: "1.1.0" };
 const UNIT = "tkr";
 const DEFAULT_ORIGIN = "https://statsbudgeten.se";
 
