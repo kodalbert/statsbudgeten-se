@@ -751,11 +751,16 @@ type BudgetsProps = {
  */
 function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
   const list = [...years].sort((a, b) => b - a);
-  // The saldo bars show the saldo as a share of the year's inkomster — a
-  // percentage compares across years where kronor would just show growth —
-  // and share one scale, so their lengths compare too.
-  const shareOf = (b: BudgetJson | undefined) => (b && b.revenuesTotal ? ((b.revenuesTotal - b.expensesTotal) / b.revenuesTotal) * 100 : 0);
-  const maxShare = Math.max(0.1, ...list.map((y) => Math.abs(shareOf(budgets[y]))));
+  // The saldo bar is the percentage itself, not normalised across years: an
+  // underskott as a share of the year's inkomster (how far income is
+  // overdrawn), an överskott as a share of the year's utgifter (how much more
+  // could be done). Each half of the track runs 0–100 %.
+  const shareOf = (b: BudgetJson | undefined) => {
+    if (!b) return 0;
+    const d = b.revenuesTotal - b.expensesTotal;
+    const base = d < 0 ? b.revenuesTotal : b.expensesTotal;
+    return base ? (d / base) * 100 : 0;
+  };
   return (
     <div className="panel budgets">
       <div className="budgets-inner" lang="sv">
@@ -797,13 +802,13 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
                   </span>
                   {b && <span className="b-totals">Utgifter {fmd(b.expensesTotal)} · Inkomster {fmd(b.revenuesTotal)}</span>}
                   {b && (
-                    <span className="b-balance" title={`Saldo ${sign(d)}${ftkr(Math.abs(d))} · ${fpct(Math.abs(share))} av årets inkomster`}>
+                    <span className="b-balance" title={`Saldo ${sign(d)}${ftkr(Math.abs(d))} · ${fpct(Math.abs(share))} av årets ${d < 0 ? "inkomster" : "utgifter"}`}>
                       <span className="b-bar" aria-hidden>
                         <span className="b-zero" />
                         <span
                           className="b-fill"
                           style={{
-                            width: `${(Math.abs(share) / maxShare) * 50}%`,
+                            width: `${Math.min(50, Math.abs(share) / 2)}%`,
                             [d < 0 ? "right" : "left"]: "50%",
                             borderRadius: d < 0 ? "5px 0 0 5px" : "0 5px 5px 0",
                             background: d < 0 ? "var(--revenue)" : "var(--expense)",
