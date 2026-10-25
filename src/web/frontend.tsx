@@ -766,14 +766,18 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
             const href = buildUrl({ mode: "explore", view: "exp", year: y, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, latest);
             return (
               <li key={y} className="budget-entry">
-                <a
-                  className="budget-card"
-                  href={href}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onOpen(y);
-                  }}
-                >
+                {/* The whole card opens the year via the stretched overlay link;
+                    the source links inside sit above it, so they stay clickable. */}
+                <div className="budget-card">
+                  <a
+                    className="b-overlay"
+                    href={href}
+                    aria-label={`Statens budget ${y} – utforska utgifterna`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onOpen(y);
+                    }}
+                  />
                   <span className="b-year">{y}</span>
                   <span className="b-main">
                     <span className="b-title">Statens budget {y}</span>
@@ -792,24 +796,24 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
                       <span className="b-vote b-missing">Uppgift om omröstningen saknas ännu.</span>
                     )}
                     {vote?.note && <span className="b-note">{vote.note}</span>}
+                    {vote && (
+                      <span className="b-sources">
+                        Källa:{" "}
+                        {vote.sources.map((s, i) => (
+                          <React.Fragment key={s.url}>
+                            {i > 0 && " · "}
+                            <a href={s.url} target="_blank" rel="noopener">
+                              {s.label} ↗
+                            </a>
+                          </React.Fragment>
+                        ))}
+                      </span>
+                    )}
                   </span>
                   <span className="b-go" aria-hidden>
                     →
                   </span>
-                </a>
-                {vote && (
-                  <p className="b-sources">
-                    Källa:{" "}
-                    {vote.sources.map((s, i) => (
-                      <React.Fragment key={s.url}>
-                        {i > 0 && " · "}
-                        <a href={s.url} target="_blank" rel="noopener">
-                          {s.label} ↗
-                        </a>
-                      </React.Fragment>
-                    ))}
-                  </p>
-                )}
+                </div>
               </li>
             );
           })}

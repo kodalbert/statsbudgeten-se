@@ -1122,6 +1122,7 @@ dialog.share::backdrop {
   gap: 14px;
 }
 .budget-card {
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -1129,14 +1130,23 @@ dialog.share::backdrop {
   padding: 14px 16px;
   border: 1px solid var(--divider);
   border-radius: 12px;
-  text-decoration: none;
   color: var(--ink);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
+/* The card's link, stretched over the whole box; the source links sit above it. */
+.budget-card .b-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
 .budget-card:hover,
-.budget-card:focus-visible {
+.budget-card:focus-within {
   border-color: var(--ink);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+.budget-card .b-overlay:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 .budget-card .b-year {
   font-size: 26px;
@@ -1188,11 +1198,15 @@ dialog.share::backdrop {
   color: var(--ink);
 }
 .b-sources {
-  margin: 6px 2px 0;
+  margin-top: 3px;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
   font-size: 13px;
   color: var(--secondary);
 }
 .b-sources a {
+  position: relative;
+  z-index: 1;
   color: var(--ink);
   font-weight: 650;
   text-decoration: underline;
