@@ -12,14 +12,15 @@
  *   /inkomster/1000/1111         inkomsttyp 1000 with inkomsttitel 1111 focused
  *   …?year=2024                  budget year (omitted for the latest year)
  *   …?inflation=1                amounts adjusted for inflation
- *   …?andel=inkomster            graphs in percent of the year's revenues (andel=utgifter: of expenses)
+ *   …?bnp=1                      the overview also draws BNP as its own line
+ *   …?andel=inkomster            graphs in percent of the year's revenues (andel=utgifter: of expenses, andel=bnp: of BNP)
  *   …?skala=relativ              the graphs' y-axis follows the data instead of starting at zero
  */
 
 export type View = "exp" | "rev";
 export type Mode = "overview" | "explore" | "about" | "search";
-/** What the graphs show: kronor, or percent of the year's revenues or expenses. */
-export type Unit = "kr" | "rev" | "exp";
+/** What the graphs show: kronor, or percent of the year's revenues, expenses or BNP. */
+export type Unit = "kr" | "rev" | "exp" | "bnp";
 /** Where the graphs' y-axis starts: at zero, or just below the data. */
 export type Scale = "zero" | "relative";
 
@@ -34,6 +35,8 @@ export type Route = {
   /** Focused row id within the group. */
   item: number | null;
   real: boolean;
+  /** Overview only: draw BNP as its own line in the graph. */
+  bnp: boolean;
   unit: Unit;
   scale: Scale;
   /** Search query; only meaningful in search mode. */
@@ -42,7 +45,8 @@ export type Route = {
 
 const VIEW_SLUG: Record<View, string> = { exp: "utgifter", rev: "inkomster" };
 const SLUG_VIEW: Record<string, View> = { utgifter: "exp", inkomster: "rev" };
-const UNIT_SLUG: Record<Unit, string | null> = { kr: null, rev: "inkomster", exp: "utgifter" };
+const UNIT_SLUG: Record<Unit, string | null> = { kr: null, rev: "inkomster", exp: "utgifter", bnp: "bnp" };
+const SLUG_UNIT: Record<string, Unit> = { inkomster: "rev", utgifter: "exp", bnp: "bnp" };
 
 const parseYear = (s: string | null | undefined): number | null => (s && /^\d{4}$/.test(s) ? Number(s) : null);
 const parseNat = (s: string | undefined): number | null => (s && /^\d+$/.test(s) ? Number(s) : null);
@@ -50,10 +54,11 @@ const parseNat = (s: string | undefined): number | null => (s && /^\d+$/.test(s)
 export function parseRoute(url: URL): Route {
   const parts = url.pathname.split("/").filter(Boolean);
   const real = url.searchParams.get("inflation") === "1";
+  const bnp = url.searchParams.get("bnp") === "1";
   const year = parseYear(url.searchParams.get("year"));
-  const unit: Unit = SLUG_VIEW[url.searchParams.get("andel") ?? ""] ?? "kr";
+  const unit: Unit = SLUG_UNIT[url.searchParams.get("andel") ?? ""] ?? "kr";
   const scale: Scale = url.searchParams.get("skala") === "relativ" ? "relative" : "zero";
-  const none = { group: null, rest: false, item: null, real, unit, scale, q: "" };
+  const none = { group: null, rest: false, item: null, real, bnp, unit, scale, q: "" };
   if (parts[0] === "om") return { mode: "about", view: "exp", year, ...none };
   if (parts[0] === "sok") return { mode: "search", view: "exp", year, ...none, q: url.searchParams.get("q")?.trim() ?? "" };
   const view = SLUG_VIEW[parts[0] ?? ""];
@@ -66,7 +71,7 @@ export function parseRoute(url: URL): Route {
     rest = true;
     i++;
   }
-  return { mode: "explore", view, year, group, rest, item: parseNat(parts[i]), real, unit, scale, q: "" };
+  return { mode: "explore", view, year, group, rest, item: parseNat(parts[i]), real, bnp, unit, scale, q: "" };
 }
 
 /** Path + query for a route. `latest` lets the URL omit the default year. */
@@ -87,6 +92,7 @@ export function buildUrl(r: Route, latest: number | null): string {
   if (r.mode === "search" && r.q) q.set("q", r.q);
   if (r.year != null && r.year !== latest) q.set("year", String(r.year));
   if (r.real) q.set("inflation", "1");
+  if (r.bnp) q.set("bnp", "1");
   const andel = UNIT_SLUG[r.unit];
   if (andel) q.set("andel", andel);
   if (r.scale === "relative") q.set("skala", "relativ");

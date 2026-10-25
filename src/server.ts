@@ -6,6 +6,7 @@
 import index from "./web/index.html";
 import { BudgetJsonSchema, type BudgetJson } from "../types/BudgetJsonSchema";
 import { InflationSchema } from "../types/InflationSchema";
+import { BnpSchema } from "../types/BnpSchema";
 import { HEIGHT, WIDTH, pageDescription, pageTitle, renderPng, routeForImage, socialImagePath, type Data } from "./social";
 import { buildUrl, parseRoute } from "./web/routes";
 import { parseMarkdown } from "./markdown";
@@ -61,7 +62,9 @@ function loadData(): Promise<Data> {
     for (const y of years) budgets[y] = BudgetJsonSchema.parse(await Bun.file(`${root}data/${y}.json`).json());
     const file = Bun.file(`${root}data/inflation.json`);
     const inflation = (await file.exists()) ? InflationSchema.safeParse(await file.json()) : null;
-    return { years, budgets, rates: inflation?.success ? inflation.data.rates : {} };
+    const bnpFile = Bun.file(`${root}data/bnp.json`);
+    const bnp = (await bnpFile.exists()) ? BnpSchema.safeParse(await bnpFile.json()) : null;
+    return { years, budgets, rates: inflation?.success ? inflation.data.rates : {}, bnp: bnp?.success ? bnp.data.bnp : {} };
   })();
   return dataPromise;
 }
@@ -235,6 +238,16 @@ const server = Bun.serve({
       if (!parsed.success) {
         console.warn("data/inflation.json är ogiltig, ignoreras:", parsed.error.message);
         return Response.json({ rates: {} });
+      }
+      return Response.json(parsed.data, { headers: { "cache-control": "public, max-age=3600" } });
+    },
+    "/api/bnp": async () => {
+      const file = Bun.file(`${root}data/bnp.json`);
+      if (!(await file.exists())) return Response.json({ bnp: {} });
+      const parsed = BnpSchema.safeParse(await file.json());
+      if (!parsed.success) {
+        console.warn("data/bnp.json är ogiltig, ignoreras:", parsed.error.message);
+        return Response.json({ bnp: {} });
       }
       return Response.json(parsed.data, { headers: { "cache-control": "public, max-age=3600" } });
     },

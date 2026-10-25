@@ -5,27 +5,27 @@ const at = (path: string) => parseRoute(new URL(path, "https://statsbudgeten.se"
 
 describe("parseRoute", () => {
   test("root is the overview", () => {
-    expect(at("/")).toEqual({ mode: "overview", view: "exp", year: null, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" });
+    expect(at("/")).toEqual({ mode: "overview", view: "exp", year: null, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "" });
     expect(at("/?year=2024&inflation=1")).toMatchObject({ mode: "overview", year: 2024, real: true });
   });
 
   test("/om is the about page", () => {
     expect(at("/om")).toMatchObject({ mode: "about", group: null });
     expect(at("/om?year=2023&inflation=1")).toMatchObject({ mode: "about", year: 2023, real: true });
-    expect(buildUrl({ mode: "about", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/om?year=2023&inflation=1");
+    expect(buildUrl({ mode: "about", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, bnp: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/om?year=2023&inflation=1");
   });
 
   test("/sok is the search page and keeps the query", () => {
     expect(at("/sok")).toMatchObject({ mode: "search", q: "" });
     expect(at("/sok?q=f%C3%B6rsvar&year=2023")).toMatchObject({ mode: "search", q: "försvar", year: 2023 });
-    expect(buildUrl({ mode: "search", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "stöd till" }, 2026)).toBe("/sok?q=st%C3%B6d+till");
-    expect(buildUrl({ mode: "search", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/sok");
+    expect(buildUrl({ mode: "search", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "stöd till" }, 2026)).toBe("/sok?q=st%C3%B6d+till");
+    expect(buildUrl({ mode: "search", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/sok");
     // The query is only written for the search page.
-    expect(buildUrl({ mode: "overview", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "x" }, 2026)).toBe("/");
+    expect(buildUrl({ mode: "overview", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "x" }, 2026)).toBe("/");
   });
 
   test("/utgifter and /inkomster are the top-level treemaps", () => {
-    expect(at("/utgifter")).toEqual({ mode: "explore", view: "exp", year: null, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" });
+    expect(at("/utgifter")).toEqual({ mode: "explore", view: "exp", year: null, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "" });
     expect(at("/inkomster?year=2022")).toMatchObject({ mode: "explore", view: "rev", year: 2022, group: null });
   });
 
@@ -46,7 +46,7 @@ describe("parseRoute", () => {
 });
 
 describe("buildUrl", () => {
-  const base: Route = { mode: "explore", view: "exp", year: 2026, group: 6, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" };
+  const base: Route = { mode: "explore", view: "exp", year: 2026, group: 6, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "" };
 
   test("writes the explore paths", () => {
     expect(buildUrl({ ...base, group: null }, 2026)).toBe("/utgifter");
@@ -60,8 +60,8 @@ describe("buildUrl", () => {
   test("year is a query parameter, omitted for the latest year", () => {
     expect(buildUrl({ ...base, year: 2023 }, 2026)).toBe("/utgifter/6?year=2023");
     expect(buildUrl({ ...base, real: true }, 2026)).toBe("/utgifter/6?inflation=1");
-    expect(buildUrl({ mode: "overview", view: "exp", year: 2022, group: null, rest: false, item: null, real: true, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/?year=2022&inflation=1");
-    expect(buildUrl({ mode: "overview", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/");
+    expect(buildUrl({ mode: "overview", view: "exp", year: 2022, group: null, rest: false, item: null, real: true, bnp: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/?year=2022&inflation=1");
+    expect(buildUrl({ mode: "overview", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, bnp: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/");
   });
 
   test("the graph unit is a query parameter, omitted for kronor", () => {
@@ -70,6 +70,15 @@ describe("buildUrl", () => {
     expect(at("/?andel=inkomster")).toMatchObject({ mode: "overview", unit: "rev" });
     expect(at("/inkomster/1000?andel=utgifter")).toMatchObject({ group: 1000, unit: "exp" });
     expect(at("/utgifter?andel=kronor")).toMatchObject({ unit: "kr" });
+    expect(buildUrl({ ...base, unit: "bnp" }, 2026)).toBe("/utgifter/6?andel=bnp");
+    expect(at("/?andel=bnp")).toMatchObject({ mode: "overview", unit: "bnp" });
+  });
+
+  test("the BNP line is a query parameter, omitted when off", () => {
+    expect(buildUrl({ ...base, bnp: true }, 2026)).toBe("/utgifter/6?bnp=1");
+    expect(at("/?bnp=1")).toMatchObject({ mode: "overview", bnp: true });
+    expect(at("/?bnp=0")).toMatchObject({ bnp: false });
+    expect(at("/")).toMatchObject({ bnp: false });
   });
 
   test("the y-axis scale is a query parameter, omitted when it starts at zero", () => {
@@ -86,10 +95,12 @@ describe("buildUrl", () => {
       { ...base, unit: "rev" },
       { ...base, item: 3, unit: "exp", real: true },
       { ...base, scale: "relative" },
+      { ...base, bnp: true, real: true },
+      { ...base, unit: "bnp" },
       { ...base, item: 3, year: 2022 },
       { ...base, rest: true, item: 23 },
       { ...base, view: "rev", group: 1000, item: 1111 },
-      { mode: "overview", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, unit: "kr", scale: "zero", q: "" },
+      { mode: "overview", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, bnp: false, unit: "kr", scale: "zero", q: "" },
     ];
     // The latest year is omitted from the URL and comes back as null for the app to fill in.
     for (const r of routes) expect(at(buildUrl(r, 2026))).toEqual({ ...r, year: r.year === 2026 ? null : r.year });

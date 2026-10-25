@@ -51,8 +51,8 @@ export { FORMATS, parseFormat, routeForImage, socialImagePath, type Format } fro
 export const WIDTH = FORMATS.link.w;
 export const HEIGHT = FORMATS.link.h;
 
-/** Everything the renderer needs: every budget year and the inflation rates. */
-export type Data = { years: number[]; budgets: Record<number, BudgetJson>; rates: InflationRates };
+/** Everything the renderer needs: every budget year, the inflation rates and BNP per year (tkr). */
+export type Data = { years: number[]; budgets: Record<number, BudgetJson>; rates: InflationRates; bnp?: Record<string, number> };
 
 const SECONDARY = "#52514e";
 const MUTED = "#898781";
@@ -63,6 +63,8 @@ type Scene = {
   route: Route;
   year: number;
   years: number[];
+  /** The years the line charts draw: all of them, except in % av BNP only those with BNP data. */
+  chartYears: number[];
   prices: Prices;
   display: Display;
   budget: BudgetJson;
@@ -95,7 +97,11 @@ export function resolve(route: Route, data: Data): Scene | null {
   const { factors, convertible } = inflationFactors(data.rates, years, baseYear ?? 0);
   const hasInflation = baseYear != null && convertible.length > 1;
   const prices = pricesFor(route.real && hasInflation, baseYear, factors);
-  const display = displayFor(route.unit, data.budgets, prices.factorOf);
+  // Without BNP data the % av BNP unit falls back to kronor, like in the app.
+  const bnp = data.bnp ?? {};
+  const unit = route.unit === "bnp" && !years.some((y) => bnp[y] != null) ? "kr" : route.unit;
+  const display = displayFor(unit, data.budgets, prices.factorOf, bnp);
+  const chartYears = unit === "bnp" ? years.filter((y) => bnp[y] != null) : years;
 
   const view = route.view;
   const all = normalize(budget, view, prices.factorOf(year));
@@ -104,7 +110,7 @@ export function resolve(route: Route, data: Data): Scene | null {
   const focused = group && route.item != null ? (group.rows.find((r) => r.id === route.item) ?? null) : null;
   const { items, parentTotal } = levelItems(all, view, group, rest);
   const gross = all.filter((g) => g.total > 0).reduce((s, g) => s + g.total, 0) || 1;
-  return { route, year, years, prices, display, budget, budgets: data.budgets, all, group, focused, items, parentTotal, gross, hues: hueOf(all, view) };
+  return { route, year, years, chartYears, prices, display, budget, budgets: data.budgets, all, group, focused, items, parentTotal, gross, hues: hueOf(all, view) };
 }
 
 /** The document title for a route, as the app sets it. */
@@ -271,8 +277,9 @@ function lineChart(box: Box, series: Series[], years: number[], year: number, no
     out.push(`<line x1="${box.x}" x2="${box.x + box.w}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${g.zero ? ink : grid}" stroke-opacity="${g.zero ? 0.35 : 1}" stroke-width="1"/>`);
     out.push(text(box.x - 10, y + 4, fmt.grid(g.v, step), { size: 12, fill: ink, anchor: "end", opacity: 0.65 }));
   }
-  const sel = Math.max(0, years.indexOf(year));
-  if (series.length > 1) {
+  // No band when the selected year is outside the chart (no BNP data for it yet).
+  const sel = years.indexOf(year);
+  if (series.length > 1 && sel >= 0) {
     out.push(`<line x1="${px(sel).toFixed(1)}" x2="${px(sel).toFixed(1)}" y1="${box.y - 8}" y2="${box.y + box.h + 8}" stroke="${ink}" stroke-opacity="0.3" stroke-dasharray="4 3"/>`);
   }
   for (const s of series) {
@@ -308,7 +315,7 @@ function lineChart(box: Box, series: Series[], years: number[], year: number, no
 
 /** The overview: expenses and revenues per year, with the year's saldo. */
 function overviewPanel(box: Box, s: Scene): string {
-  const { years, year } = s;
+  const { chartYears: years, year } = s;
   const { factorOf, nominalNote } = s.prices;
   const { unit, toUnit, fmt, unitNote } = s.display;
   // A share is the same at any price level, so the price notes only apply in kronor.
@@ -354,7 +361,7 @@ function overviewPanel(box: Box, s: Scene): string {
 
 /** The history of the group, or of the focused posting, in the group's colour. */
 function focusPanel(box: Box, s: Scene): string {
-  const { years, year, group, focused, route } = s;
+  const { chartYears: years, year, group, focused, route } = s;
   if (!group) return "";
   const view = route.view;
   const T = COPY[view];

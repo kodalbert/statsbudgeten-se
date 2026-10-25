@@ -70,10 +70,17 @@ export const FMT_PCT: Fmt = {
   minPad: 0.05,
 };
 
+/** % av BNP: the shares sit close together, so the labels carry two decimals. */
+export const FMT_PCT_BNP: Fmt = {
+  ...FMT_PCT,
+  short: (v) => `${NF2.format(v)} %`,
+};
+
 export const UNITS: { k: Unit; label: string; note: string }[] = [
   { k: "kr", label: "kr", note: "" },
   { k: "rev", label: "% av inkomster", note: " · % av inkomsterna" },
   { k: "exp", label: "% av utgifter", note: " · % av utgifterna" },
+  { k: "bnp", label: "% av BNP", note: " · % av BNP" },
 ];
 
 /** The y-axis options in the settings, see the `skala` query parameter. */
@@ -392,18 +399,19 @@ export function pricesFor(real: boolean, baseYear: number | null, factors: Map<n
   };
 }
 
-/** Graph unit: kronor, or percent of the year's total revenues or expenses. */
-export function displayFor(unit: Unit, budgets: Record<number, BudgetJson>, factorOf: (y: number) => number): Display {
+/** Graph unit: kronor, or percent of the year's total revenues, expenses or BNP (tkr per year). */
+export function displayFor(unit: Unit, budgets: Record<number, BudgetJson>, factorOf: (y: number) => number, bnp: Record<string, number> = {}): Display {
   return {
     unit,
     // Amounts arrive price-adjusted, so the total is adjusted the same way.
     toUnit: (v, y) => {
       if (unit === "kr") return v;
       const b = budgets[y];
-      const total = (unit === "rev" ? (b?.revenuesTotal ?? 0) : (b?.expensesTotal ?? 0)) * factorOf(y);
+      const base = unit === "bnp" ? (bnp[y] ?? 0) : unit === "rev" ? (b?.revenuesTotal ?? 0) : (b?.expensesTotal ?? 0);
+      const total = base * factorOf(y);
       return total ? (v / total) * 100 : 0;
     },
-    fmt: unit === "kr" ? FMT_KR : FMT_PCT,
+    fmt: unit === "kr" ? FMT_KR : unit === "bnp" ? FMT_PCT_BNP : FMT_PCT,
     unitNote: UNITS.find((u) => u.k === unit)?.note ?? "",
   };
 }

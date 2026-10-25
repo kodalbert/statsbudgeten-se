@@ -10,6 +10,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BudgetJsonSchema, type BudgetJson } from "../../types/BudgetJsonSchema";
 import { InflationSchema } from "../../types/InflationSchema";
+import { BnpSchema } from "../../types/BnpSchema";
 import { chooseBaseYear, inflationFactors } from "../inflation";
 import { initAnalytics, trackEvent, trackPageView } from "./analytics";
 import { aboutContent } from "./content.macro" with { type: "macro" };
@@ -19,6 +20,7 @@ import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type Scale, typ
 import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
 import {
   COPY,
+  FMT_KR,
   INK,
   PAPER,
   NF0,
@@ -125,20 +127,29 @@ type LineChartProps = {
   extra?: (i: number) => string | null;
   /** The points are already in this unit; `fmt` only writes them. */
   fmt: Fmt;
+  /**
+   * A reference series on its own right-hand axis (the BNP line): dashed, no
+   * dots, always in kronor. Years it lacks are simply left out of the line.
+   */
+  right?: { label: string; points: Point[]; fmt: Fmt; color: string };
 };
 
 /**
  * Line chart with an info box: hovering a year's dot or label shows the exact
  * figures and the change from the previous year; clicking pins the box.
  */
-function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: LineChartProps) {
+function LineChart({ series, years, year, nominal, scale, paper, extra, fmt, right }: LineChartProps) {
   const open = useRevealed();
   const [hoverYear, setHoverYear] = useState<number | null>(null);
   const [pinnedYear, setPinnedYear] = useState<number | null>(null);
   const n = years.length;
   const { Y, grid, step, base } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad, scale);
   const pts = (s: Series) => s.points.map((p, i) => `${X(i, n).toFixed(2)},${Y(p.v).toFixed(2)}`).join(" ");
-  const selIndex = Math.max(0, years.indexOf(year));
+  // The reference series gets its own scale, read off the right-hand axis.
+  const rscale = right && right.points.length ? niceScale(right.points.map((p) => p.v), right.fmt.minPad, scale) : null;
+  const rpts = right && rscale ? right.points.map((p) => `${X(years.indexOf(p.y), n).toFixed(2)},${rscale.Y(p.v).toFixed(2)}`).join(" ") : "";
+  // -1 when the selected year is outside the chart (no BNP data for it yet).
+  const selIndex = years.indexOf(year);
   // With several series, each year's highest value is labelled above its dot
   // and the others below, so labels never collide where the lines run close.
   const below = (s: Series, i: number) => series.length > 1 && series.some((o) => o !== s && (o.points[i]?.v ?? -Infinity) > (s.points[i]?.v ?? -Infinity));
@@ -195,19 +206,45 @@ function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: L
             </div>
           );
         })}
+        {right &&
+          (() => {
+            const v = right.points.find((p) => p.y === y)?.v;
+            if (v == null) return null;
+            const prev = prevYear != null ? right.points.find((p) => p.y === prevYear)?.v : null;
+            const pct = prev ? ((v - prev) / prev) * 100 : null;
+            return (
+              <div className="ib-row">
+                {series.length > 1 && (
+                  <span className="ib-label">
+                    <span className="swatch dash" style={{ borderTopColor: right.color }} />
+                    {right.label}
+                  </span>
+                )}
+                <span className="ib-val">{right.fmt.exact(v)}</span>
+                <span className="ib-diff">{pct != null ? `${sign(pct)}${NF1.format(Math.abs(pct))} %${mixed ? "*" : ""}` : "första året i serien"}</span>
+              </div>
+            );
+          })()}
         {extra?.(i) && <div className="ib-extra">{extra(i)}</div>}
       </div>
     );
   }
 
   return (
-    <div className="chart" onClick={() => setPinnedYear(null)}>
+    <div className={`chart${rscale ? " dual" : ""}`} onClick={() => setPinnedYear(null)}>
       {grid.map((g) => (
         <div key={g.top} className={`gridline${g.zero ? " zero" : ""}`} style={{ top: g.top }}>
           <span>{fmt.grid(g.v, step)}</span>
         </div>
       ))}
-      {series.length > 1 && <div className="band" style={{ left: `${X(selIndex, n)}%` }} />}
+      {right &&
+        rscale &&
+        rscale.grid.map((g) => (
+          <span key={g.top} className="rlabel" style={{ top: g.top, color: right.color }}>
+            {right.fmt.grid(g.v, rscale.step)}
+          </span>
+        ))}
+      {series.length > 1 && selIndex >= 0 && <div className="band" style={{ left: `${X(selIndex, n)}%` }} />}
       <div className="reveal" style={{ clipPath: `inset(0 ${open ? "0%" : "100%"} 0 0)`, transitionDelay: open ? ".2s" : "0s" }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
           {series.map((s) => (
@@ -216,6 +253,9 @@ function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: L
               <polyline points={pts(s)} fill="none" stroke={s.color ?? "currentColor"} strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
             </React.Fragment>
           ))}
+          {right && rscale && (
+            <polyline points={rpts} fill="none" stroke={right.color} strokeWidth="2.5" strokeDasharray="1.4 1.1" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          )}
         </svg>
       </div>
       {series.map((s) =>
@@ -270,6 +310,10 @@ type OverviewProps = Prices & Display & {
   budgets: Record<number, BudgetJson>;
   year: number;
   scale: Scale;
+  /** BNP per year in tkr (data/bnp.json), empty when the file is missing. */
+  bnpValues: Record<string, number>;
+  showBnp: boolean;
+  onToggleBnp: () => void;
 };
 
 const SIDES = [
@@ -277,7 +321,10 @@ const SIDES = [
   { k: "rev", label: "Inkomster", color: "var(--revenue)" },
 ] as const;
 
-function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: OverviewProps) {
+/** The BNP line: grey, legible on the overview's paper background. */
+const BNP_COLOR = "#767676";
+
+function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote, bnpValues, showBnp, onToggleBnp }: OverviewProps) {
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
@@ -289,6 +336,17 @@ function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, p
   const sel = totals.find((t) => t.y === year) ?? totals[totals.length - 1]!;
   const saldo = sel.rev - sel.exp;
   const fsaldo = (d: number) => `${sign(d)}${fmt.short(Math.abs(d))}`;
+  // BNP is always in kronor on its own right-hand axis, so it reads the same
+  // whatever unit the budget lines use; the inflation toggle applies to it too.
+  const hasBnp = years.some((y) => bnpValues[y] != null);
+  const bnpYears = years.filter((y) => bnpValues[y] != null);
+  const bnpPoints = showBnp ? bnpYears.map((y) => ({ y, v: bnpValues[y]! * factorOf(y) })) : [];
+  const bnpNote =
+    showBnp && bnpPoints.length > 0 && bnpYears.length < years.length
+      ? `BNP t.o.m. ${bnpYears[bnpYears.length - 1]} (SCB), skala till höger i mdkr`
+      : showBnp && bnpPoints.length > 0
+        ? "BNP (SCB), skala till höger i mdkr"
+        : "";
 
   return (
     <div className="panel overview" style={{ background: PAPER, color: INK, ["--grid-color" as string]: "rgba(11,11,11,0.12)" }}>
@@ -310,6 +368,25 @@ function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, p
                   {s.label}
                 </span>
               ))}
+              {showBnp && bnpPoints.length > 0 && (
+                <span>
+                  <span className="swatch dash" style={{ borderTopColor: BNP_COLOR }} />
+                  BNP
+                </span>
+              )}
+              {hasBnp && (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={showBnp}
+                  className={`switch${showBnp ? " on" : ""}`}
+                  title="Visa BNP till marknadspris som egen linje, med egen skala till höger"
+                  onClick={onToggleBnp}
+                >
+                  <span className="knob" aria-hidden />
+                  <span>Visa BNP</span>
+                </button>
+              )}
             </span>
           </div>
           <div className="delta">
@@ -333,8 +410,9 @@ function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, p
             const d = t.rev - t.exp;
             return `Saldo ${sign(d)}${fmt.exact(Math.abs(d))} · ${d < 0 ? "underskott" : d > 0 ? "överskott" : "balans"}`;
           }}
+          right={bnpPoints.length > 0 ? { label: "BNP", points: bnpPoints, fmt: FMT_KR, color: BNP_COLOR } : undefined}
         />
-        <div className="note">{years.some(nominal) ? nominalNote : ""}</div>
+        <div className="note">{[years.some(nominal) ? nominalNote : "", bnpNote].filter(Boolean).join(" · ")}</div>
       </div>
     </div>
   );
@@ -810,7 +888,8 @@ function App() {
   const [itemKey, setItemKey] = useState<string | null>(null);
   const [pendingItem, setPendingItem] = useState<number | null>(initialRoute.item);
   const [realWanted, setReal] = useState(initialRoute.real);
-  const [unit, setUnit] = useState<Unit>(initialRoute.unit);
+  const [bnpWanted, setBnpWanted] = useState(initialRoute.bnp);
+  const [unitWanted, setUnit] = useState<Unit>(initialRoute.unit);
   const [scale, setScale] = useState<Scale>(initialRoute.scale);
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
@@ -822,6 +901,7 @@ function App() {
   const sheetRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const [rates, setRates] = useState<Record<string, number>>({});
+  const [bnpValues, setBnpValues] = useState<Record<string, number>>({});
   /** The stage's width and the height left for the map under the history panel. */
   const [size, setSize] = useState({ W: 1000, H: 600 });
   const [error, setError] = useState(false);
@@ -837,11 +917,15 @@ function App() {
         const years = (await res.json()) as unknown;
         if (!Array.isArray(years) || !years.every((y) => typeof y === "number")) throw new Error("Bad year list");
         const sorted = [...(years as number[])].sort((a, b) => a - b);
-        // Inflation data is optional: without it the toggle simply stays hidden.
+        // Inflation and BNP data are optional: without them their toggles simply stay hidden.
         const inflation = await fetch("/api/inflation")
           .then((r) => (r.ok ? r.json() : null))
           .catch(() => null);
         const parsedInflation = InflationSchema.safeParse(inflation);
+        const bnpJson = await fetch("/api/bnp")
+          .then((r) => (r.ok ? r.json() : null))
+          .catch(() => null);
+        const parsedBnp = BnpSchema.safeParse(bnpJson);
         const entries = await Promise.all(
           sorted.map(async (y) => {
             const r = await fetch(`/api/budget/${y}`);
@@ -853,6 +937,7 @@ function App() {
         const latest = sorted[sorted.length - 1];
         setYrs(sorted);
         setRates(parsedInflation.success ? parsedInflation.data.rates : {});
+        setBnpValues(parsedBnp.success ? parsedBnp.data.bnp : {});
         setBudgets(Object.fromEntries(entries));
         // Keep the year from the URL when it exists, otherwise show the latest.
         setYear((y) => (y != null && sorted.includes(y) ? y : (latest ?? null)));
@@ -877,6 +962,7 @@ function App() {
     setItemKey(null);
     setPendingItem(r.item);
     setReal(r.real);
+    setBnpWanted(r.bnp);
     setUnit(r.unit);
     setScale(r.scale);
     setQ(r.q);
@@ -1051,12 +1137,18 @@ function App() {
   const { factors, convertible } = useMemo(() => inflationFactors(rates, yrs, baseYear ?? 0), [rates, yrs, baseYear]);
   const hasInflation = baseYear != null && convertible.length > 1;
   const real = realWanted && hasInflation;
+  const hasBnp = yrs.some((y) => bnpValues[y] != null);
+  const showBnp = bnpWanted && hasBnp;
   const prices = pricesFor(real, baseYear, factors);
   const { factorOf, nominal, priceNote, nominalNote } = prices;
   const f = year != null ? factorOf(year) : 1;
 
-  // Graph unit: kronor, or percent of the year's total revenues or expenses.
-  const display = displayFor(unit, budgets, factorOf);
+  // Graph unit: kronor, or percent of the year's total revenues, expenses or
+  // BNP. Without BNP data the % av BNP unit falls back to kronor.
+  const unit = unitWanted === "bnp" && !hasBnp ? "kr" : unitWanted;
+  const display = displayFor(unit, budgets, factorOf, bnpValues);
+  // In % av BNP the line charts only draw the years that have BNP data.
+  const chartYears = unit === "bnp" ? yrs.filter((y) => bnpValues[y] != null) : yrs;
 
   const all = useMemo(() => (B ? normalize(B, view, f) : []), [B, view, f]);
   const total = B ? (rev ? B.revenuesTotal : B.expensesTotal) * f : 0;
@@ -1104,7 +1196,7 @@ function App() {
   const tracked = useRef<string | null>(null);
   useEffect(() => {
     if (year == null) return;
-    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, scale, q }, latest);
+    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, bnp: showBnp, unit, scale, q }, latest);
     const current = window.location.pathname + window.location.search;
     if (url !== current) {
       // The first sync only normalises the URL we were opened with, and typing
@@ -1119,7 +1211,7 @@ function App() {
     if (tracked.current !== page) trackPageView(page, mode === "search" ? "Sök" : pageTitle);
     tracked.current = page;
     synced.current = url;
-  }, [mode, view, year, group, rest, itemId, real, unit, scale, q, latest, pageTitle]);
+  }, [mode, view, year, group, rest, itemId, real, showBnp, unit, scale, q, latest, pageTitle]);
 
   // Items at the current drill level, with what a click on each does.
   const level = B ? levelItems(all, view, group, rest) : { items: [], parentTotal: total };
@@ -1373,14 +1465,14 @@ function App() {
                     Visa
                   </span>
                   <div className="seg" role="radiogroup" aria-labelledby="unit-label">
-                    {UNITS.map((u) => (
+                    {UNITS.filter((u) => u.k !== "bnp" || hasBnp).map((u) => (
                       <button
                         key={u.k}
                         type="button"
                         role="radio"
                         aria-checked={u.k === unit}
                         className={u.k === unit ? "active" : ""}
-                        title={u.k === "kr" ? "Belopp i kronor" : `Grafer i procent av årets ${u.k === "rev" ? "inkomster" : "utgifter"}`}
+                        title={u.k === "kr" ? "Belopp i kronor" : `Grafer i procent av årets ${u.k === "rev" ? "inkomster" : u.k === "exp" ? "utgifter" : "BNP"}`}
                         onClick={() => {
                           if (u.k === unit) return;
                           trackEvent("toggle_unit", { unit: u.k });
@@ -1510,12 +1602,26 @@ function App() {
         {searching && <Search budget={B} year={year} q={q} onChange={setQ} onPick={pickHit} />}
 
         {overview && B && year != null && (
-          <Overview years={yrs} budgets={budgets} year={year} scale={scale} {...prices} {...display} />
+          <Overview
+            years={chartYears}
+            budgets={budgets}
+            year={year}
+            scale={scale}
+            bnpValues={bnpValues}
+            showBnp={showBnp}
+            onToggleBnp={() => {
+              trackEvent("toggle_bnp", { enabled: !showBnp });
+              setBnpWanted(!showBnp);
+              setHover(null);
+            }}
+            {...prices}
+            {...display}
+          />
         )}
 
         {!overview && !about && !searching && group && year != null && multiYear && (
           <FocusPanel
-            years={yrs}
+            years={chartYears}
             budgets={budgets}
             year={year}
             scale={scale}

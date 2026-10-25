@@ -285,6 +285,11 @@ button {
   padding: 5px 8px;
   white-space: nowrap;
 }
+/* Four unit options don't fit one row: lay them out two and two. */
+.popover .unit-picker .seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
 
 /* ---- Inflation toggle ---- */
 
@@ -753,6 +758,20 @@ dialog.share::backdrop {
   height: 9px;
   border-radius: 50%;
 }
+/* A dashed-line swatch, for the BNP line in the legend and the info box. */
+.panel .legend .swatch.dash,
+.panel .infobox .swatch.dash {
+  width: 14px;
+  height: 0;
+  border-radius: 0;
+  border-top: 2px dashed currentColor;
+  background: none;
+}
+/* The Visa BNP toggle sits at the end of the legend without adding height. */
+.panel .legend .switch {
+  margin: -5px 0 -5px 10px;
+  font-size: 13px;
+}
 .panel .delta {
   display: flex;
   flex-direction: column;
@@ -801,6 +820,20 @@ dialog.share::backdrop {
   padding-right: 10px;
   font-size: 12px;
   opacity: 0.65;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* The BNP line's axis on the right: labels only, the gridlines stay the left scale's. */
+.panel .chart.dual {
+  margin-right: 52px;
+}
+.panel .chart .rlabel {
+  position: absolute;
+  left: 100%;
+  margin-top: -8px;
+  padding-left: 10px;
+  font-size: 12px;
+  opacity: 0.85;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -1331,6 +1364,8 @@ dialog.share::backdrop {
   }
   .menu-items .unit-picker .seg {
     width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
   }
   .menu-items .unit-picker .seg button {
     flex: 1;
@@ -1411,6 +1446,9 @@ dialog.share::backdrop {
   }
   .panel .chart {
     margin: 28px 28px 26px 40px;
+  }
+  .panel .chart.dual {
+    margin-right: 44px;
   }
   .panel.focus .name {
     white-space: normal;

@@ -93,6 +93,7 @@ export function createMcp(data: Data, site: string | null = null) {
     rest: false,
     item,
     real,
+    bnp: false,
     unit: "kr",
     scale: "zero",
     q: "",
