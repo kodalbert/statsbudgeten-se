@@ -205,7 +205,7 @@ export function prerender(route: Route, data: Data, about: Block[], votes: Budge
         const d = b ? b.revenuesTotal - b.expensesTotal : 0;
         const totals = b ? ` Utgifter ${fmd(b.expensesTotal)}, inkomster ${fmd(b.revenuesTotal)}, saldo ${sign(d)}${fmd(Math.abs(d))}.` : "";
         const voted = vote
-          ? ` ${esc(voteLine(vote.parties, vote.support))} (${esc(partyNames([...vote.parties, ...(vote.support ?? [])]))}).${vote.note ? ` ${esc(vote.note)}` : ""} Källa: ${vote.sources.map((s) => `<a href="${esc(s.url)}">${esc(s.label)}</a>`).join(", ")}.`
+          ? ` ${esc(voteLine(vote.parties, vote.support))} (${esc(partyNames([...vote.parties, ...(vote.support ?? [])]))}). Källa: ${vote.sources.map((s) => `<a href="${esc(s.url)}">${esc(s.label)}</a>`).join(", ")}.`
           : "";
         return `<li>${link(buildUrl(r, latest), `Statens budget ${y}`)}.${esc(totals)}${voted}</li>`;
       })

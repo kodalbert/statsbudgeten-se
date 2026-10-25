@@ -13,7 +13,6 @@ One entry per budget year, validated by `types/BudgetVotesSchema.ts`:
 "2023": {
   "parties": ["M", "KD", "L"],
   "support": ["SD"],
-  "note": "Regeringen Kristerssons budgetproposition, framtagen med SD enligt Tidöavtalet.",
   "sources": [
     { "label": "Rambeslutet i riksdagen, bet. 2022/23:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_HA01FiU1/" }
   ]
@@ -24,7 +23,6 @@ One entry per budget year, validated by `types/BudgetVotesSchema.ts`:
   winning reservation's). Letters as the riksdag writes them; `FP` before the
   2015 rename to `L`. The full list is in `types/BudgetVotesSchema.ts`.
 - `support` — parties that voted for it without being behind it (optional).
-- `note` — one line of context (optional).
 - `sources` — at least one link, normally the rambeslut (finansutskottets
   betänkande FiU1) on riksdagen.se. The short form
   `https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_<id>/`

@@ -25,8 +25,6 @@ export const BudgetVoteSchema = z.object({
   parties: z.array(PartySchema).min(1),
   /** Parties that voted for it without being behind it (stödpartier). */
   support: z.array(PartySchema).optional(),
-  /** One line of context, e.g. "Alliansens budgetreservation vann omröstningen." */
-  note: z.string().optional(),
   sources: z.array(VoteSourceSchema).min(1),
 });
 export type BudgetVote = z.infer<typeof BudgetVoteSchema>;

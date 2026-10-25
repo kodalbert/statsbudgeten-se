@@ -32,6 +32,7 @@ import {
   displayFor,
   fmd,
   fpct,
+  ftkr,
   groupPanelColor,
   historyPoints,
   hueOf,
@@ -750,6 +751,8 @@ type BudgetsProps = {
  */
 function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
   const list = [...years].sort((a, b) => b - a);
+  // The saldo bars share one scale, so their lengths compare across the years.
+  const maxSaldo = Math.max(1, ...list.map((y) => Math.abs((budgets[y]?.revenuesTotal ?? 0) - (budgets[y]?.expensesTotal ?? 0))));
   return (
     <div className="panel budgets">
       <div className="budgets-inner" lang="sv">
@@ -778,41 +781,50 @@ function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
                       onOpen(y);
                     }}
                   />
-                  <span className="b-year">{y}</span>
-                  <span className="b-main">
-                    <span className="b-title">Statens budget {y}</span>
-                    {b && (
-                      <span className="b-totals">
-                        Utgifter {fmd(b.expensesTotal)} · Inkomster {fmd(b.revenuesTotal)} · Saldo {sign(d)}
+                  <span className="b-head">
+                    <span className="b-year">{y}</span>
+                    {vote && <PartyBadges parties={vote.parties} support={vote.support} size={24} />}
+                    <span className="b-go" aria-hidden>
+                      →
+                    </span>
+                  </span>
+                  <span className={`b-vote-text${vote ? "" : " b-missing"}`}>
+                    {vote ? voteLine(vote.parties, vote.support) : "Uppgift om omröstningen saknas ännu."}
+                  </span>
+                  {b && <span className="b-totals">Utgifter {fmd(b.expensesTotal)} · Inkomster {fmd(b.revenuesTotal)}</span>}
+                  {b && (
+                    <span className="b-balance" title={`Saldo ${sign(d)}${ftkr(Math.abs(d))}`}>
+                      <span className="b-bar" aria-hidden>
+                        <span className="b-zero" />
+                        <span
+                          className="b-fill"
+                          style={{
+                            width: `${(Math.abs(d) / maxSaldo) * 50}%`,
+                            [d < 0 ? "right" : "left"]: "50%",
+                            borderRadius: d < 0 ? "5px 0 0 5px" : "0 5px 5px 0",
+                            background: d < 0 ? "var(--revenue)" : "var(--expense)",
+                          }}
+                        />
+                      </span>
+                      <span className="b-balance-label">
+                        {d < 0 ? "Underskott" : d > 0 ? "Överskott" : "Balans"} {sign(d)}
                         {fmd(Math.abs(d))}
                       </span>
-                    )}
-                    {vote ? (
-                      <span className="b-vote">
-                        <PartyBadges parties={vote.parties} support={vote.support} size={26} />
-                        <span className="b-vote-text">{voteLine(vote.parties, vote.support)}</span>
-                      </span>
-                    ) : (
-                      <span className="b-vote b-missing">Uppgift om omröstningen saknas ännu.</span>
-                    )}
-                    {vote?.note && <span className="b-note">{vote.note}</span>}
-                    {vote && (
-                      <span className="b-sources">
-                        Källa:{" "}
-                        {vote.sources.map((s, i) => (
-                          <React.Fragment key={s.url}>
-                            {i > 0 && " · "}
-                            <a href={s.url} target="_blank" rel="noopener">
-                              {s.label} ↗
-                            </a>
-                          </React.Fragment>
-                        ))}
-                      </span>
-                    )}
-                  </span>
-                  <span className="b-go" aria-hidden>
-                    →
-                  </span>
+                    </span>
+                  )}
+                  {vote && (
+                    <span className="b-sources">
+                      Källa:{" "}
+                      {vote.sources.map((s, i) => (
+                        <React.Fragment key={s.url}>
+                          {i > 0 && " · "}
+                          <a href={s.url} target="_blank" rel="noopener">
+                            {s.label} ↗
+                          </a>
+                        </React.Fragment>
+                      ))}
+                    </span>
+                  )}
                 </div>
               </li>
             );
