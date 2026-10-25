@@ -2,6 +2,7 @@
  * URL ⇄ app state.
  *
  *   /                            overview: inkomster vs utgifter per year
+ *   /budgetar                    every budget year, with who voted it through
  *   /om                          about page
  *   /sok?q=försvar               search page, with the query
  *   /utgifter                    treemap of all utgiftsområden (/inkomster: inkomsttyper)
@@ -17,7 +18,7 @@
  */
 
 export type View = "exp" | "rev";
-export type Mode = "overview" | "explore" | "about" | "search";
+export type Mode = "overview" | "explore" | "about" | "search" | "budgets";
 /** What the graphs show: kronor, or percent of the year's revenues or expenses. */
 export type Unit = "kr" | "rev" | "exp";
 /** Where the graphs' y-axis starts: at zero, or just below the data. */
@@ -55,6 +56,7 @@ export function parseRoute(url: URL): Route {
   const scale: Scale = url.searchParams.get("skala") === "relativ" ? "relative" : "zero";
   const none = { group: null, rest: false, item: null, real, unit, scale, q: "" };
   if (parts[0] === "om") return { mode: "about", view: "exp", year, ...none };
+  if (parts[0] === "budgetar") return { mode: "budgets", view: "exp", year, ...none };
   if (parts[0] === "sok") return { mode: "search", view: "exp", year, ...none, q: url.searchParams.get("q")?.trim() ?? "" };
   const view = SLUG_VIEW[parts[0] ?? ""];
   if (!view) return { mode: "overview", view: "exp", year, ...none };
@@ -73,6 +75,7 @@ export function parseRoute(url: URL): Route {
 export function buildUrl(r: Route, latest: number | null): string {
   let path = "/";
   if (r.mode === "about") path = "/om";
+  if (r.mode === "budgets") path = "/budgetar";
   if (r.mode === "search") path = "/sok";
   if (r.mode === "explore") {
     const parts = [VIEW_SLUG[r.view]];

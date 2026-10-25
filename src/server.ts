@@ -5,6 +5,7 @@
  */
 import index from "./web/index.html";
 import { BudgetJsonSchema, type BudgetJson } from "../types/BudgetJsonSchema";
+import { BudgetVotesSchema, type BudgetVotes } from "../types/BudgetVotesSchema";
 import { InflationSchema } from "../types/InflationSchema";
 import { HEIGHT, WIDTH, pageDescription, pageTitle, renderPng, routeForImage, socialImagePath, type Data } from "./social";
 import { buildUrl, parseRoute } from "./web/routes";
@@ -44,6 +45,15 @@ const aboutPromise = Bun.file(`${root}content/om.md`)
   .text()
   .then(parseMarkdown)
   .catch(() => []);
+
+/** Who voted each budget through (content/budgetar.json), for the static HTML; the app bundles its own copy. */
+const votesPromise: Promise<BudgetVotes> = Bun.file(`${root}content/budgetar.json`)
+  .json()
+  .then((j) => BudgetVotesSchema.parse(j))
+  .catch((e) => {
+    console.warn("content/budgetar.json kunde inte läsas, ignoreras:", (e as Error).message);
+    return {};
+  });
 
 /** Favicon, app icons, the social share image and the web manifest, from assets/. */
 const asset = (file: string, type: string) =>
@@ -147,6 +157,7 @@ async function page(req: Request): Promise<Response> {
     },
   };
   const about = await aboutPromise;
+  const votes = await votesPromise;
   return new HTMLRewriter()
     .on("title", {
       element: (el) => {
@@ -171,7 +182,7 @@ async function page(req: Request): Promise<Response> {
     })
     .on("#root", {
       element: (el) => {
-        el.setInnerContent(prerender(route, data, about), { html: true });
+        el.setInnerContent(prerender(route, data, about, votes), { html: true });
       },
     })
     .transform(html);
@@ -196,6 +207,7 @@ const server = Bun.serve({
     "/inkomster": page,
     "/inkomster/*": page,
     "/om": page,
+    "/budgetar": page,
     "/sok": page,
     // The bundled app page itself; `page` fetches it and fills in the share tags.
     "/__index": index,

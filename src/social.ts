@@ -110,6 +110,7 @@ export function resolve(route: Route, data: Data): Scene | null {
 /** The document title for a route, as the app sets it. */
 export function pageTitle(route: Route, data: Data): string {
   if (route.mode === "about") return "Om sajten";
+  if (route.mode === "budgets") return "Budgetar";
   if (route.mode === "search") return route.q ? `Sök: ${route.q}` : "Sök";
   if (route.mode === "overview") return "Inkomster och utgifter";
   const s = resolve(route, data);
@@ -121,6 +122,11 @@ export function pageTitle(route: Route, data: Data): string {
 
 /** A one-line description of what the page shows, for og:description. */
 export function pageDescription(route: Route, data: Data): string | null {
+  if (route.mode === "budgets") {
+    const years = data.years;
+    const span = years.length ? `${years[years.length - 1]}–${years[0]}` : "";
+    return `Statens budgetar ${span}: vilka partier som röstade fram varje budget i riksdagen, med källor.`;
+  }
   if (route.mode !== "overview" && route.mode !== "explore") return null;
   const s = resolve(route, data);
   if (!s) return null;

@@ -943,6 +943,16 @@ dialog.share::backdrop {
   border-top: 1px solid var(--divider);
   font-weight: 600;
 }
+.panel .infobox .ib-vote {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+  max-width: 300px;
+}
 
 .panel .note {
   height: 16px;
@@ -1047,6 +1057,170 @@ dialog.share::backdrop {
 .prose .muted {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- Party badges ---- */
+
+.parties {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+.party {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.party.support {
+  opacity: 0.88;
+}
+.parties .plus {
+  font-weight: 700;
+  color: var(--muted);
+  margin: 0 1px;
+}
+
+/* ---- Budgetar page ---- */
+
+.panel.budgets {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--surface);
+  color: var(--ink);
+}
+.budgets-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+}
+.budgets-inner h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0 0 8px;
+}
+.budgets-intro {
+  margin: 0 0 20px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--secondary);
+}
+.budget-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.budget-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  text-decoration: none;
+  color: var(--ink);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.budget-card:hover,
+.budget-card:focus-visible {
+  border-color: var(--ink);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+.budget-card .b-year {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  align-self: start;
+  line-height: 1.2;
+}
+.budget-card .b-main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.budget-card .b-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.budget-card .b-totals {
+  font-size: 13px;
+  color: var(--secondary);
+  font-variant-numeric: tabular-nums;
+}
+.budget-card .b-vote {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.budget-card .b-missing {
+  color: var(--muted);
+  font-weight: 500;
+}
+.budget-card .b-note {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--secondary);
+}
+.budget-card .b-go {
+  font-size: 18px;
+  color: var(--muted);
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.budget-card:hover .b-go {
+  transform: translateX(3px);
+  color: var(--ink);
+}
+.b-sources {
+  margin: 6px 2px 0;
+  font-size: 13px;
+  color: var(--secondary);
+}
+.b-sources a {
+  color: var(--ink);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: var(--separator);
+  text-underline-offset: 2px;
+}
+.b-sources a:hover {
+  text-decoration-color: var(--ink);
+}
+
+@media (max-width: 480px) {
+  .budget-card {
+    grid-template-columns: 1fr auto;
+  }
+  .budget-card .b-year {
+    grid-column: 1;
+  }
+  .budget-card .b-main {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .budget-card .b-go {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .budget-card .b-vote {
+    flex-wrap: wrap;
+  }
 }
 
 /* ---- Search page ---- */

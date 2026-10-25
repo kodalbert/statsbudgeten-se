@@ -15,6 +15,12 @@ describe("parseRoute", () => {
     expect(buildUrl({ mode: "about", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/om?year=2023&inflation=1");
   });
 
+  test("/budgetar is the budget list", () => {
+    expect(at("/budgetar")).toMatchObject({ mode: "budgets", group: null, item: null });
+    expect(at("/budgetar?year=2024&inflation=1")).toMatchObject({ mode: "budgets", year: 2024, real: true });
+    expect(buildUrl({ mode: "budgets", view: "exp", year: 2026, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, 2026)).toBe("/budgetar");
+  });
+
   test("/sok is the search page and keeps the query", () => {
     expect(at("/sok")).toMatchObject({ mode: "search", q: "" });
     expect(at("/sok?q=f%C3%B6rsvar&year=2023")).toMatchObject({ mode: "search", q: "försvar", year: 2023 });
@@ -90,6 +96,7 @@ describe("buildUrl", () => {
       { ...base, rest: true, item: 23 },
       { ...base, view: "rev", group: 1000, item: 1111 },
       { mode: "overview", view: "exp", year: 2023, group: null, rest: false, item: null, real: true, unit: "kr", scale: "zero", q: "" },
+      { mode: "budgets", view: "exp", year: 2024, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" },
     ];
     // The latest year is omitted from the URL and comes back as null for the app to fill in.
     for (const r of routes) expect(at(buildUrl(r, 2026))).toEqual({ ...r, year: r.year === 2026 ? null : r.year });

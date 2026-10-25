@@ -6,7 +6,13 @@
  */
 import { readFileSync } from "node:fs";
 import { parseMarkdown, type Block } from "../markdown";
+import { BudgetVotesSchema, type BudgetVotes } from "../../types/BudgetVotesSchema";
 
 export function aboutContent(): Block[] {
   return parseMarkdown(readFileSync(`${import.meta.dir}/../../content/om.md`, "utf8"));
+}
+
+/** content/budgetar.json: who voted each budget through, validated at build time. */
+export function budgetVotes(): BudgetVotes {
+  return BudgetVotesSchema.parse(JSON.parse(readFileSync(`${import.meta.dir}/../../content/budgetar.json`, "utf8")));
 }

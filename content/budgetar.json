@@ -1,0 +1,111 @@
+{
+  "2013": {
+    "parties": ["M", "FP", "C", "KD"],
+    "note": "Regeringen Reinfeldts (Alliansen) budgetproposition antogs av riksdagen.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2012/13:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H001FiU1/" }
+    ]
+  },
+  "2014": {
+    "parties": ["M", "FP", "C", "KD"],
+    "note": "Regeringen Reinfeldts (Alliansen) budgetproposition antogs av riksdagen.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2013/14:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H101FiU1/" }
+    ]
+  },
+  "2015": {
+    "parties": ["M", "FP", "C", "KD"],
+    "support": ["SD"],
+    "note": "Alliansens budgetreservation vann omröstningen när SD röstade för den i stället för regeringen Löfvens förslag.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2014/15:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H201FiU1/" }
+    ]
+  },
+  "2016": {
+    "parties": ["S", "MP"],
+    "support": ["V"],
+    "note": "Regeringen Löfvens budgetproposition, framförhandlad med Vänsterpartiet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2015/16:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H301FiU1/" }
+    ]
+  },
+  "2017": {
+    "parties": ["S", "MP"],
+    "support": ["V"],
+    "note": "Regeringen Löfvens budgetproposition, framförhandlad med Vänsterpartiet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2016/17:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H401FiU1/" }
+    ]
+  },
+  "2018": {
+    "parties": ["S", "MP"],
+    "support": ["V"],
+    "note": "Regeringen Löfvens budgetproposition, framförhandlad med Vänsterpartiet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2017/18:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H501FiU1/" }
+    ]
+  },
+  "2019": {
+    "parties": ["M", "KD"],
+    "support": ["SD"],
+    "note": "Under regeringsbildningen efter valet 2018 vann M:s och KD:s gemensamma budgetreservation omröstningen med stöd av SD.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2018/19:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H601FiU1/" }
+    ]
+  },
+  "2020": {
+    "parties": ["S", "MP"],
+    "support": ["C", "L"],
+    "note": "Regeringen Löfvens budgetproposition enligt januariavtalet med C och L.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2019/20:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H701FiU1/" }
+    ]
+  },
+  "2021": {
+    "parties": ["S", "MP"],
+    "support": ["C", "L"],
+    "note": "Regeringen Löfvens budgetproposition enligt januariavtalet med C och L.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2020/21:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H801FiU1/" }
+    ]
+  },
+  "2022": {
+    "parties": ["M", "KD", "SD"],
+    "note": "Riksdagen antog regeringens budgetproposition med de ändringar som M, KD och SD föreslagit gemensamt.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2021/22:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_H901FiU1/" }
+    ]
+  },
+  "2023": {
+    "parties": ["M", "KD", "L"],
+    "support": ["SD"],
+    "note": "Regeringen Kristerssons budgetproposition, framtagen med SD enligt Tidöavtalet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2022/23:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_HA01FiU1/" }
+    ]
+  },
+  "2024": {
+    "parties": ["M", "KD", "L"],
+    "support": ["SD"],
+    "note": "Regeringen Kristerssons budgetproposition, framtagen med SD enligt Tidöavtalet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2023/24:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_HB01FiU1/" }
+    ]
+  },
+  "2025": {
+    "parties": ["M", "KD", "L"],
+    "support": ["SD"],
+    "note": "Regeringen Kristerssons budgetproposition, framtagen med SD enligt Tidöavtalet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2024/25:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_HC01FiU1/" }
+    ]
+  },
+  "2026": {
+    "parties": ["M", "KD", "L"],
+    "support": ["SD"],
+    "note": "Regeringen Kristerssons budgetproposition, framtagen med SD enligt Tidöavtalet.",
+    "sources": [
+      { "label": "Rambeslutet i riksdagen, bet. 2025/26:FiU1", "url": "https://www.riksdagen.se/sv/dokument-och-lagar/dokument/betankande/_HD01FiU1/" }
+    ]
+  }
+}

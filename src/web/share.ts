@@ -46,7 +46,7 @@ const OVERVIEW_IMAGE = "oversikt";
 /** The image path for an app URL, or null for pages that have no chart. */
 export function socialImagePath(url: URL, format: Format = "link"): string | null {
   const route = parseRoute(url);
-  if (route.mode === "about" || route.mode === "search") return null;
+  if (route.mode === "about" || route.mode === "search" || route.mode === "budgets") return null;
   const app = buildUrl(route, null);
   const [path, query] = app.split("?") as [string, string?];
   const name = path === "/" ? OVERVIEW_IMAGE : path.slice(1);

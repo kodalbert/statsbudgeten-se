@@ -12,8 +12,10 @@ import { BudgetJsonSchema, type BudgetJson } from "../../types/BudgetJsonSchema"
 import { InflationSchema } from "../../types/InflationSchema";
 import { chooseBaseYear, inflationFactors } from "../inflation";
 import { initAnalytics, trackEvent, trackPageView } from "./analytics";
-import { aboutContent } from "./content.macro" with { type: "macro" };
+import { aboutContent, budgetVotes } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
+import type { BudgetVotes, Party } from "../../types/BudgetVotesSchema";
+import { PARTIES, voteLine } from "../parties";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
 import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type Scale, type Unit, type View } from "./routes";
 import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
@@ -73,6 +75,47 @@ function installIcons() {
 /** content/om.md, converted to JSON when the bundle is built. */
 const ABOUT: Block[] = aboutContent();
 
+/** content/budgetar.json: who voted each budget through, validated when the bundle is built. */
+const VOTES: BudgetVotes = budgetVotes();
+
+// ---- Party badges ---------------------------------------------------------------
+
+/** A party's mark: its letter(s) on its colour. */
+function PartyBadge({ party, size = 22, support = false }: { party: Party; size?: number; support?: boolean }) {
+  const p = PARTIES[party];
+  return (
+    <span
+      className={`party${support ? " support" : ""}`}
+      title={support ? `${p.name} (stöd)` : p.name}
+      aria-label={support ? `${p.name} (stöd)` : p.name}
+      style={{ width: size, height: size, fontSize: Math.round(size * (party.length > 1 ? 0.36 : 0.48)), background: p.color, color: p.fg }}
+    >
+      {party}
+    </span>
+  );
+}
+
+/** The parties behind a budget, with the ones that released it through after a plus. */
+function PartyBadges({ parties, support, size }: { parties: Party[]; support?: Party[]; size?: number }) {
+  return (
+    <span className="parties">
+      {parties.map((p) => (
+        <PartyBadge key={p} party={p} size={size} />
+      ))}
+      {!!support?.length && (
+        <>
+          <span className="plus" aria-hidden>
+            +
+          </span>
+          {support.map((p) => (
+            <PartyBadge key={p} party={p} size={size} support />
+          ))}
+        </>
+      )}
+    </span>
+  );
+}
+
 // ---- Logo ---------------------------------------------------------------------
 
 /** The mark: a mini treemap, same geometry as assets/favicon.svg. */
@@ -121,8 +164,8 @@ type LineChartProps = {
   scale: Scale;
   /** Fill for unselected dots, i.e. the panel background. */
   paper: string;
-  /** Extra line at the bottom of the info box for year index i, e.g. the saldo. */
-  extra?: (i: number) => string | null;
+  /** Extra content at the bottom of the info box for year index i, e.g. the saldo. */
+  extra?: (i: number) => React.ReactNode;
   /** The points are already in this unit; `fmt` only writes them. */
   fmt: Fmt;
 };
@@ -160,6 +203,7 @@ function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: L
   let box: React.ReactNode = null;
   if (shownIndex >= 0) {
     const i = shownIndex;
+    const extraContent = extra?.(i);
     const y = years[i]!;
     const prevYear = i > 0 ? years[i - 1]! : null;
     const mixed = prevYear != null && nominal(y) !== nominal(prevYear);
@@ -195,7 +239,7 @@ function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: L
             </div>
           );
         })}
-        {extra?.(i) && <div className="ib-extra">{extra(i)}</div>}
+        {extraContent != null && extraContent !== false && <div className="ib-extra">{extraContent}</div>}
       </div>
     );
   }
@@ -331,7 +375,18 @@ function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, p
           extra={(i) => {
             const t = totals[i]!;
             const d = t.rev - t.exp;
-            return `Saldo ${sign(d)}${fmt.exact(Math.abs(d))} · ${d < 0 ? "underskott" : d > 0 ? "överskott" : "balans"}`;
+            const vote = VOTES[String(t.y)];
+            return (
+              <>
+                {`Saldo ${sign(d)}${fmt.exact(Math.abs(d))} · ${d < 0 ? "underskott" : d > 0 ? "överskott" : "balans"}`}
+                {vote && (
+                  <div className="ib-vote">
+                    <PartyBadges parties={vote.parties} support={vote.support} size={16} />
+                    <span>{voteLine(vote.parties, vote.support)}</span>
+                  </div>
+                )}
+              </>
+            );
           }}
         />
         <div className="note">{years.some(nominal) ? nominalNote : ""}</div>
@@ -677,6 +732,93 @@ function Search({ budget, year, q, onChange, onPick }: SearchProps) {
   );
 }
 
+// ---- Budgetar: every budget year and who voted it through -----------------------
+
+type BudgetsProps = {
+  /** Ascending, as App keeps them. */
+  years: number[];
+  budgets: Record<number, BudgetJson>;
+  latest: number | null;
+  /** Open the expenses treemap for a year. */
+  onOpen: (y: number) => void;
+};
+
+/**
+ * One entry per budget year, newest first: the totals, the parties that voted
+ * the budget through (from content/budgetar.json) and the source of that
+ * claim. The year itself links to the expenses with the year pre-selected.
+ */
+function Budgetar({ years, budgets, latest, onOpen }: BudgetsProps) {
+  const list = [...years].sort((a, b) => b - a);
+  return (
+    <div className="panel budgets">
+      <div className="budgets-inner" lang="sv">
+        <h1>Budgetar</h1>
+        <p className="budgets-intro">
+          En statsbudget per år, och vilka partier som röstade fram den i riksdagen. Klicka på ett år för att utforska utgifterna; källan för varje
+          omröstning är riksdagens rambeslut.
+        </p>
+        <ul className="budget-list">
+          {list.map((y) => {
+            const b = budgets[y];
+            const vote = VOTES[String(y)];
+            const d = b ? b.revenuesTotal - b.expensesTotal : 0;
+            const href = buildUrl({ mode: "explore", view: "exp", year: y, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" }, latest);
+            return (
+              <li key={y} className="budget-entry">
+                <a
+                  className="budget-card"
+                  href={href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onOpen(y);
+                  }}
+                >
+                  <span className="b-year">{y}</span>
+                  <span className="b-main">
+                    <span className="b-title">Statens budget {y}</span>
+                    {b && (
+                      <span className="b-totals">
+                        Utgifter {fmd(b.expensesTotal)} · Inkomster {fmd(b.revenuesTotal)} · Saldo {sign(d)}
+                        {fmd(Math.abs(d))}
+                      </span>
+                    )}
+                    {vote ? (
+                      <span className="b-vote">
+                        <PartyBadges parties={vote.parties} support={vote.support} size={26} />
+                        <span className="b-vote-text">{voteLine(vote.parties, vote.support)}</span>
+                      </span>
+                    ) : (
+                      <span className="b-vote b-missing">Uppgift om omröstningen saknas ännu.</span>
+                    )}
+                    {vote?.note && <span className="b-note">{vote.note}</span>}
+                  </span>
+                  <span className="b-go" aria-hidden>
+                    →
+                  </span>
+                </a>
+                {vote && (
+                  <p className="b-sources">
+                    Källa:{" "}
+                    {vote.sources.map((s, i) => (
+                      <React.Fragment key={s.url}>
+                        {i > 0 && " · "}
+                        <a href={s.url} target="_blank" rel="noopener">
+                          {s.label} ↗
+                        </a>
+                      </React.Fragment>
+                    ))}
+                  </p>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // ---- App ----------------------------------------------------------------------
 
 // ---- Share dialog ---------------------------------------------------------------
@@ -898,6 +1040,7 @@ function App() {
       if (shareOpen) return; // the dialog closes itself
       if (settingsOpen) return setSettingsOpen(false);
       if (mode === "about") return showOverview();
+      if (mode === "budgets") return showOverview();
       if (mode === "search") return q ? setQ("") : showOverview();
       if (itemKey != null || pendingItem != null) {
         setItemKey(null);
@@ -1007,6 +1150,26 @@ function App() {
     setHover(null);
   };
 
+  const showBudgets = () => {
+    setMode("budgets");
+    setUo(null);
+    setRest(false);
+    clearFocus();
+    setHover(null);
+  };
+
+  /** Open the expenses treemap for a year, from the Budgetar list. */
+  const openBudget = (y: number) => {
+    trackEvent("open_budget", { year: y });
+    setMode("explore");
+    setView("exp");
+    setUo(null);
+    setRest(false);
+    clearFocus();
+    if (yrs.includes(y)) setYear(y);
+    setHover(null);
+  };
+
   /** Open the page a search hit points at. */
   const pickHit = (h: SearchHit) => {
     trackEvent("search_pick", { query: q, view: h.view, group: h.gkey, item: h.id ?? "" });
@@ -1093,6 +1256,8 @@ function App() {
   const pageTitle =
     mode === "about"
       ? "Om sajten"
+      : mode === "budgets"
+      ? "Budgetar"
       : mode === "search"
       ? q ? `Sök: ${q}` : "Sök"
       : mode === "overview"
@@ -1198,6 +1363,8 @@ function App() {
   const saldoShown = B && year != null ? display.toUnit(B.revenuesTotal * f, year) - display.toUnit(B.expensesTotal * f, year) : 0;
   const base: Info = mode === "about"
     ? { title: "Om Statsbudgeten", hint: "Esc eller Översikt för att gå tillbaka" }
+    : mode === "budgets"
+    ? { title: "Budgetar", share: "Vilka partier som röstade fram varje budget", hint: "Klicka på ett år för att utforska utgifterna" }
     : mode === "search"
     ? { title: `Sök i budgeten ${year ?? ""}`, hint: q ? "Pil upp/ner och Enter väljer · Esc rensar" : "Skriv för att söka" }
     : !B
@@ -1226,6 +1393,7 @@ function App() {
   const overview = mode === "overview";
   const about = mode === "about";
   const searching = mode === "search";
+  const budgetList = mode === "budgets";
 
   return (
     <div className="app" lang="sv">
@@ -1287,7 +1455,7 @@ function App() {
               ["rev", "var(--revenue)", B ? B.revenuesTotal * f : undefined],
             ] as const
           ).map(([k, dot, tot]) => {
-            const active = !overview && !about && !searching && view === k;
+            const active = !overview && !about && !searching && !budgetList && view === k;
             return (
               <button key={k} type="button" className={`tab${active ? " active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => showGraph(k)}>
                 <span className="dot" style={{ background: dot }} />
@@ -1296,6 +1464,9 @@ function App() {
               </button>
             );
           })}
+          <button type="button" className={`tab${budgetList ? " active" : ""}`} aria-current={budgetList ? "page" : undefined} onClick={showBudgets}>
+            <span>Budgetar</span>
+          </button>
           <button type="button" className={`tab${searching ? " active" : ""}`} aria-current={searching ? "page" : undefined} onClick={showSearch}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
               <circle cx="11" cy="11" r="7" />
@@ -1431,6 +1602,12 @@ function App() {
                 Om sajten
               </button>
             </span>
+          ) : budgetList ? (
+            <span className="crumb">
+              <button type="button" className="current" disabled>
+                Budgetar
+              </button>
+            </span>
           ) : searching ? (
             <span className="crumb">
               <button type="button" className="current" disabled>
@@ -1494,7 +1671,7 @@ function App() {
             </>
           )}
         </nav>
-        {!about && !searching && B && (
+        {!about && !searching && !budgetList && B && (
           <button type="button" className="share-toggle" onClick={() => setShareOpen(true)} title="Dela som bild eller länk">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
@@ -1507,13 +1684,14 @@ function App() {
 
       <div className="stage" ref={stageRef} inert={menuOpen || undefined}>
         {about && <About />}
+        {budgetList && <Budgetar years={yrs} budgets={budgets} latest={latest} onOpen={openBudget} />}
         {searching && <Search budget={B} year={year} q={q} onChange={setQ} onPick={pickHit} />}
 
         {overview && B && year != null && (
           <Overview years={yrs} budgets={budgets} year={year} scale={scale} {...prices} {...display} />
         )}
 
-        {!overview && !about && !searching && group && year != null && multiYear && (
+        {!overview && !about && !searching && !budgetList && group && year != null && multiYear && (
           <FocusPanel
             years={yrs}
             budgets={budgets}
@@ -1531,7 +1709,7 @@ function App() {
           />
         )}
 
-        {!overview && !about && !searching && (
+        {!overview && !about && !searching && !budgetList && (
           <>
             <div className="map" style={{ height: mapH }}>
               {placed.map(({ it, x, y, w, h }) => {

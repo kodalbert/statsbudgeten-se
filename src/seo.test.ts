@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { BudgetJsonSchema, type BudgetJson } from "../types/BudgetJsonSchema";
+import { BudgetVotesSchema } from "../types/BudgetVotesSchema";
 import { parseMarkdown } from "./markdown";
 import { HEAD_LINKS, blocksHtml, canonicalPath, prerender, robotsTxt, sitemapPaths, sitemapXml, structuredData } from "./seo";
 import type { Data } from "./social";
@@ -43,13 +44,14 @@ describe("canonicalPath", () => {
 
 describe("sitemap", () => {
   const paths = sitemapPaths(data);
-  test("lists every year's views, groups and postings once, plus the overview and about", () => {
+  test("lists every year's views, groups and postings once, plus the overview, budget list and about", () => {
     expect(paths[0]).toBe("/");
     expect(paths).toContain("/om");
+    expect(paths).toContain("/budgetar");
     expect(paths).toContain("/utgifter");
     expect(paths).toContain("/inkomster");
     expect(new Set(paths).size).toBe(paths.length);
-    let expected = 2;
+    let expected = 3;
     for (const y of data.years) {
       const b = data.budgets[y]!;
       expected += 2 + b.expenses.length + b.revenues.length;
@@ -153,6 +155,21 @@ describe("prerender", () => {
     expect(prerender(route("/om"), data, about)).toContain('<a href="https://github.com/kodalbert/statsbudgeten-se">');
     expect(prerender(route("/sok?q=<b>"), data, about)).toContain("<h1>Sök i statsbudgeten</h1>");
     expect(prerender(route("/sok?q=<b>"), data, about)).not.toContain("<b>");
+  });
+  test("the budget list names every year, who voted it through and the source", async () => {
+    const votes = BudgetVotesSchema.parse(await Bun.file(`${root}content/budgetar.json`).json());
+    const html = prerender(route("/budgetar"), data, about, votes);
+    expect(html).toContain("<h1>Budgetar</h1>");
+    for (const y of data.years) expect(html).toContain(`Statens budget ${y}`);
+    expect(html).toContain(`<a href="/utgifter">Statens budget ${latest}</a>`);
+    if (oldest !== latest) expect(html).toContain(`<a href="/utgifter?year=${oldest}">Statens budget ${oldest}</a>`);
+    const vote = votes[String(latest)];
+    if (vote) {
+      expect(html).toContain("Röstades fram av");
+      expect(html).toContain(`<a href="${vote.sources[0]!.url}">`);
+    }
+    // Without vote content the list still renders.
+    expect(prerender(route("/budgetar"), data, about)).toContain(`Statens budget ${latest}`);
   });
   test("an unknown group falls back to the view's root", () => {
     expect(prerender(route("/utgifter/999"), data, about)).toContain(`<h1>Statens utgifter ${latest}</h1>`);

@@ -9,8 +9,10 @@
  * level down, so the whole site is reachable from plain HTML.
  */
 import type { Block, Inline } from "./markdown";
+import type { BudgetVotes } from "../types/BudgetVotesSchema";
+import { partyNames, voteLine } from "./parties";
 import { pageDescription, resolve, type Data } from "./social";
-import { COPY, fmd, fpct } from "./web/model";
+import { COPY, fmd, fpct, sign } from "./web/model";
 import { buildUrl, type Route } from "./web/routes";
 
 export const SITE_NAME = "Statsbudgeten";
@@ -53,8 +55,8 @@ export function canonicalPath(route: Route, data: Data): string {
 /** Every indexable path: the overview, about, and every year's views, groups and postings. */
 export function sitemapPaths(data: Data): string[] {
   const latest = data.years[0] ?? null;
-  const paths = ["/", "/om"];
-  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, q: "" };
+  const paths = ["/", "/budgetar", "/om"];
+  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, scale: "zero" as const, q: "" };
   for (const year of data.years) {
     const budget = data.budgets[year];
     if (!budget) continue;
@@ -186,12 +188,30 @@ const historyTable = (rows: { year: number; v: number }[], what: string) =>
  * its numbers as a table, and links to the pages below it. The app replaces
  * it on mount; crawlers and readers without JavaScript keep it.
  */
-export function prerender(route: Route, data: Data, about: Block[]): string {
+export function prerender(route: Route, data: Data, about: Block[], votes: BudgetVotes = {}): string {
   const latest = data.years[0] ?? null;
-  const nav = `<nav aria-label="Huvudmeny">${[link("/", "Översikt"), link("/utgifter", "Utgifter"), link("/inkomster", "Inkomster"), link("/om", "Om sajten")].join(" · ")}</nav>`;
+  const nav = `<nav aria-label="Huvudmeny">${[link("/", "Översikt"), link("/utgifter", "Utgifter"), link("/inkomster", "Inkomster"), link("/budgetar", "Budgetar"), link("/om", "Om sajten")].join(" · ")}</nav>`;
   const foot = `<p>Alla belopp kommer oförändrade från Regeringskansliet och SCB. Sajten är fristående och öppen källkod.</p>`;
 
   if (route.mode === "about") return `<article class="prerender">${nav}${blocksHtml(about)}</article>`;
+
+  if (route.mode === "budgets") {
+    const years = [...data.years].sort((a, b) => b - a);
+    const items = years
+      .map((y) => {
+        const b = data.budgets[y];
+        const vote = votes[String(y)];
+        const r: Route = { mode: "explore", view: "exp", year: y, group: null, rest: false, item: null, real: false, unit: "kr", scale: "zero", q: "" };
+        const d = b ? b.revenuesTotal - b.expensesTotal : 0;
+        const totals = b ? ` Utgifter ${fmd(b.expensesTotal)}, inkomster ${fmd(b.revenuesTotal)}, saldo ${sign(d)}${fmd(Math.abs(d))}.` : "";
+        const voted = vote
+          ? ` ${esc(voteLine(vote.parties, vote.support))} (${esc(partyNames([...vote.parties, ...(vote.support ?? [])]))}).${vote.note ? ` ${esc(vote.note)}` : ""} Källa: ${vote.sources.map((s) => `<a href="${esc(s.url)}">${esc(s.label)}</a>`).join(", ")}.`
+          : "";
+        return `<li>${link(buildUrl(r, latest), `Statens budget ${y}`)}.${esc(totals)}${voted}</li>`;
+      })
+      .join("");
+    return `<article class="prerender">${nav}<h1>Budgetar</h1><p>${esc(pageDescription(route, data) ?? "")}</p><ul>${items}</ul>${foot}</article>`;
+  }
   if (route.mode === "search") {
     return `<article class="prerender">${nav}<h1>Sök i statsbudgeten</h1><p>Sök bland utgiftsområden, anslag, inkomsttyper och inkomsttitlar i det valda budgetåret.</p>${foot}</article>`;
   }
@@ -202,7 +222,7 @@ export function prerender(route: Route, data: Data, about: Block[]): string {
       .map((y) => {
         const b = data.budgets[y];
         if (!b) return "";
-        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, q: "" };
+        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, scale: "zero" as const, q: "" };
         const d = b.revenuesTotal - b.expensesTotal;
         return `<tr><th>${y}</th><td>${link(buildUrl({ ...r, view: "exp" }, latest), fmd(b.expensesTotal))}</td><td>${link(buildUrl({ ...r, view: "rev" }, latest), fmd(b.revenuesTotal))}</td><td>${esc((d < 0 ? "−" : "+") + fmd(Math.abs(d)))}</td></tr>`;
       })
