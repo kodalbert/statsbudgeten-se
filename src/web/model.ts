@@ -206,8 +206,45 @@ export function levelItems(all: NormGroup[], view: View, group: NormGroup | null
       drill: true,
     });
   }
-  return { items, parentTotal: group.total };
+  return { items, parentTotal: sum };
 }
+
+/** Explain the positive-only map without presenting its gross sum as net revenue.
+ * The same parent basis applies inside Övriga. Amounts retain the official net
+ * subtotal, which can differ from the row sum by a few tkr due to rounding.
+ */
+export function signedBreakdown(group: NormGroup) {
+  const negativeRows = group.rows.filter((r) => r.v < 0).sort((a, b) => a.v - b.v);
+  const negative = negativeRows.reduce((s, r) => s + r.v, 0);
+  const positive = group.rows.reduce((s, r) => s + Math.max(0, r.v), 0);
+  const netRatio = positive > 0 ? group.total / positive : 0;
+  return { positive, negative, net: group.total, netRatio, negativeRows };
+}
+
+export function reconciliationNote(group: NormGroup): string {
+  const { positive, negative } = signedBreakdown(group);
+  if (!negative) return "";
+  return `Andelar av positiva poster: ${fmd(positive)} · Avdrag och justeringar: ${fmd(negative)} · Netto: ${fmd(group.total)}`;
+}
+
+/** Illustrative allocation, not an official net amount for a tax entry.
+ * Always use the whole parent group, including when viewing Övriga.
+ */
+export function allocatedNet(value: number, group: NormGroup): number {
+  const positive = group.rows.reduce((s, r) => s + Math.max(0, r.v), 0);
+  return positive > 0 ? value * (group.total / positive) : 0;
+}
+
+export function postingAmount(value: number, breakdown: ReturnType<typeof signedBreakdown> | null): string {
+  const gross = fmd(value);
+  if (!breakdown || value <= 0 || breakdown.negative >= 0) return gross;
+  const net = fmd(value * breakdown.netRatio);
+  // Share the unit when both amounts use the same magnitude.
+  const unit = gross.endsWith(" mdkr") ? " mdkr" : " mnkr";
+  return net.endsWith(unit) ? `${gross.slice(0, -unit.length)} / ${net}` : `${gross} / ${net}`;
+}
+
+export const ALLOCATION_NOTE = "Samma procentuella avdrag fördelas på alla positiva poster. Summan blir gruppens netto före avrundning. Det är en schablon, inte officiellt netto per post.";
 
 /** Tile colour per the design: hue by group, lightness by rank. */
 export function colorOf(it: Item, drilled: boolean): { bg: string; fg: string } {
@@ -408,7 +445,17 @@ export function displayFor(unit: Unit, budgets: Record<number, BudgetJson>, fact
   };
 }
 
-/** The points of a group's, or one of its postings', history across the years. */
+export const DEDUCTION_NOTE = "Avdragets storlek · visas som positiva belopp";
+
+/** Presentation only: never change the signed history used by budget calculations
+ * or the API. Preserve signs for postings that switch between revenue and deduction.
+ */
+export function chartHistory(points: Point[], posting: boolean): { points: Point[]; deduction: boolean } {
+  const deduction = posting && points.some((p) => p.v < 0) && points.every((p) => Number.isFinite(p.v) && p.v <= 0);
+  return { points: deduction ? points.map((p) => ({ ...p, v: Math.abs(p.v) })) : points, deduction };
+}
+
+/** The signed points of a group's, or one of its postings', history across the years. */
 export function historyPoints(years: number[], budgets: Record<number, BudgetJson>, view: View, gkey: string, row: string | null, factorOf: (y: number) => number, toUnit: (v: number, y: number) => number): Point[] {
   return years.map((y) => {
     const b = budgets[y];
