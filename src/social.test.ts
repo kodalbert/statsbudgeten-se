@@ -52,6 +52,25 @@ describe("titles", () => {
 });
 
 describe("rendering", () => {
+  test("deduction history is presented as positive magnitude", () => {
+    const svg = renderSvg(parseRoute(url("/inkomster/1000/1811?year=2026")), data)!;
+    expect(svg).toContain("Avdragets storlek · visas som positiva belopp");
+    // The history panel ends before the reconciliation/treemap below it.
+    const panel = svg.slice(0, svg.indexOf("Andelar av positiva poster:"));
+    expect(panel).not.toContain("−1 034 mdkr");
+    expect(panel).toContain("1 034 mdkr");
+    expect(panel).toContain("+434 mdkr");
+  });
+  test.each(FORMAT_KEYS)("%s tax image explains the positive-only percentage basis and net total", (format) => {
+    const svg = renderSvg(parseRoute(url("/inkomster/1000")), data, format)!;
+    expect(svg).toContain("Andelar av positiva poster:");
+    expect(svg).toContain("Avdrag och justeringar:");
+    expect(svg).toContain("Netto:");
+    expect(svg).toContain("proportionellt fördelat netto");
+    expect(svg.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")).toContain("inte officiellt netto per post");
+    expect(svg).toContain("Kommunala skatter");
+    expect(svg).toContain("Övriga avdrag"); // Narrow formats truncate the longer label.
+  });
   const pages = ["/", "/utgifter", "/inkomster", "/utgifter/6", "/utgifter/6/ovriga", "/inkomster/1000", "/?inflation=1&andel=utgifter", `/utgifter?year=${Math.min(...data.years)}`];
 
   test.each(pages)("%s draws a 1200×630 PNG", (page) => {

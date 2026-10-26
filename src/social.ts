@@ -31,6 +31,12 @@ import {
   hueOf,
   layout,
   levelItems,
+  reconciliationNote,
+  DEDUCTION_NOTE,
+  chartHistory,
+  ALLOCATION_NOTE,
+  postingAmount,
+  signedBreakdown,
   niceScale,
   normalize,
   pricesFor,
@@ -370,7 +376,7 @@ function focusPanel(box: Box, s: Scene): string {
   const dark = fg !== INK;
   const title = focused ? focused.title : group.title;
   const kicker = focused ? `${group.code} · ${group.title}` : `${group.code} · ${T.kind}`;
-  const points: Point[] = historyPoints(years, s.budgets, view, group.key, focused?.key ?? null, factorOf, toUnit);
+  const { points, deduction } = chartHistory(historyPoints(years, s.budgets, view, group.key, focused?.key ?? null, factorOf, toUnit), focused != null);
   const { first, last, pct } = changeOver(points, nominal);
   const d = last.v - first.v;
   const delta =
@@ -390,6 +396,7 @@ function focusPanel(box: Box, s: Scene): string {
   out.push(text(right, top + 10, `${first.y}–${last.y}`, { size: 12, weight: 600, fill: fg, anchor: "end", opacity: 0.7 }));
   out.push(text(right, top + 36, delta.big, { size: 20, weight: 700, fill: fg, anchor: "end", spacing: "-0.4" }));
   out.push(text(right, top + 54, delta.small, { size: 13, weight: 600, fill: fg, anchor: "end", opacity: 0.75 }));
+  if (deduction) out.push(text(left, top + 58, DEDUCTION_NOTE, { size: 11, weight: 600, fill: fg, opacity: 0.75 }));
   const chart: Box = { x: left + 56, y: top + 84, w: box.w - pad * 2 - 56 - 10, h: box.h - 16 - 84 - 40 };
   out.push(lineChart(chart, [{ key: "v", label: title, points }], years, year, nominal, s.route.scale, bg, fg, dark ? "rgba(255,255,255,0.22)" : "rgba(11,11,11,0.12)", fmt));
   return out.join("\n");
@@ -400,6 +407,7 @@ function focusPanel(box: Box, s: Scene): string {
 /** The tiles at the scene's drill level, laid out over the box like the app's map. */
 function treemap(box: Box, s: Scene): string {
   const { items, group, focused } = s;
+  const breakdown = group ? signedBreakdown(group) : null;
   const share = (it: Item) => fpct((it.v / (group ? s.parentTotal : s.gross)) * 100);
   const out: string[] = [];
   const defs: string[] = [];
@@ -438,8 +446,9 @@ function treemap(box: Box, s: Scene): string {
       const area = w * h;
       const shareSize = Math.round(Math.max(18, Math.min(64, Math.sqrt(area) / 5.2)));
       const bottom = inner.y + inner.h - padY;
-      g.push(text(tx, bottom - 1, fmd(it.v), { size: 12, weight: 600, fill: fg, opacity: 0.75 }));
-      g.push(text(tx, bottom - 12 - 4, share(it), { size: shareSize, weight: 700, fill: fg, spacing: `${(-0.03 * shareSize).toFixed(2)}` }));
+      const amounts = wrap(postingAmount(it.v, breakdown), cw, 12, 600, 2);
+      amounts.forEach((line, i) => g.push(text(tx, bottom - 1 - (amounts.length - 1 - i) * 14, line, { size: 12, weight: 600, fill: fg, opacity: 0.75 })));
+      g.push(text(tx, bottom - amounts.length * 14 - 2, share(it), { size: shareSize, weight: 700, fill: fg, spacing: `${(-0.03 * shareSize).toFixed(2)}` }));
     }
     out.push(`<g clip-path="url(#${id})">${g.join("")}</g>`);
   });
@@ -492,8 +501,41 @@ export function renderSvg(route: Route, data: Data, format: Format = "link"): st
     const multiYear = s.years.length > 1;
     const panelH = multiYear ? Math.round(Math.min(320, Math.max(232, body.h * 0.36))) : 0;
     if (multiYear) out.push(focusPanel({ x: body.x, y: body.y, w: body.w, h: panelH }, s));
-    const mapY = body.y + panelH + (multiYear ? 8 : 0);
-    out.push(treemap({ x: body.x, y: mapY, w: body.w, h: body.y + body.h - mapY }, s));
+    let mapY = body.y + panelH + (multiYear ? 8 : 0);
+    const note = reconciliationNote(s.group);
+    if (note) {
+      const lines = wrap(note, body.w, 13, 600, 3);
+      lines.forEach((line, i) => out.push(text(body.x, mapY + 16 + i * 18, line, { size: 13, weight: 600, fill: SECONDARY })));
+      mapY += lines.length * 18 + 12;
+      const allocationLines = wrap(`Belopp: positivt / proportionellt fördelat netto. ${ALLOCATION_NOTE}`, body.w, 12, 600, 4);
+      allocationLines.forEach((line, i) => out.push(text(body.x, mapY + 14 + i * 16, line, { size: 12, weight: 600, fill: SECONDARY })));
+      mapY += allocationLines.length * 16 + 10;
+    }
+    const breakdown = signedBreakdown(s.group);
+    const mapH = body.y + body.h - mapY;
+    if (breakdown.negative < 0) {
+      const negativeW = Math.round(body.w * 0.36);
+      const positiveW = body.w - negativeW - 16;
+      const nx = body.x + positiveW + 16;
+      out.push(text(body.x, mapY + 14, "Positiva poster", { size: 13, weight: 700, fill: INK }));
+      out.push(treemap({ x: body.x, y: mapY + 24, w: positiveW, h: mapH - 24 }, s));
+      out.push(text(nx, mapY + 14, "Avdrag och justeringar", { size: 13, weight: 700, fill: INK }));
+      // Fixed-size images show the largest deductions and bundle the remaining
+      // ones, preserving the complete negative total at every image size.
+      const count = Math.max(1, Math.min(5, Math.floor((mapH - 82) / 36)));
+      const rows = breakdown.negativeRows.slice(0, count).map((r) => ({ title: r.title, v: r.v }));
+      const remaining = breakdown.negativeRows.slice(count);
+      if (remaining.length) rows.push({ title: "Övriga avdrag och justeringar", v: remaining.reduce((sum, r) => sum + r.v, 0) });
+      rows.forEach((row, i) => {
+        const y = mapY + 34 + i * 36;
+        out.push(text(nx, y, ellipsize(row.title, negativeW - 100, 12, 600), { size: 12, weight: 600, fill: INK }));
+        out.push(text(nx + negativeW, y, fmd(row.v), { size: 12, weight: 600, fill: INK, anchor: "end" }));
+        out.push(`<rect x="${nx}" y="${y + 7}" width="${negativeW * row.v / breakdown.negative}" height="3" fill="#a34c3d"/>`);
+      });
+      out.push(text(nx + negativeW, body.y + body.h - 4, `Netto: ${fmd(breakdown.net)}`, { size: 16, weight: 700, fill: INK, anchor: "end" }));
+    } else {
+      out.push(treemap({ x: body.x, y: mapY, w: body.w, h: mapH }, s));
+    }
   }
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}" font-family="Inter">
 ${out.join("\n")}

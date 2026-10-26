@@ -672,7 +672,8 @@ dialog.share::backdrop {
   font-weight: 550;
   opacity: 0.75;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ---- Chart panels: the overview and the group/posting history ---- */
@@ -1504,4 +1505,59 @@ dialog.share::backdrop {
 }
 .prerender li {
   margin: 4px 0;
+}
+.reconciliation {
+  margin: 8px 0 12px;
+  padding: 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reconciliation-totals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+}
+
+.reconciliation-totals div { display: grid; gap: 4px; }
+.reconciliation-totals strong { font-size: 24px; }
+.reconciliation h2, .negative-breakdown h2 { font-size: 18px; }
+.negative-breakdown { padding: 20px 12px; }
+.negative-breakdown p { font-size: 13px; line-height: 1.5; }
+.negative-breakdown h2 { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.negative-breakdown ul { list-style: none; padding: 0; }
+.negative-breakdown button {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 65px;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 10px;
+  margin-bottom: 4px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.negative-breakdown button[aria-pressed="true"] { outline: 2px solid currentColor; }
+.negative-breakdown button:hover { background: #f4f3ef; }
+.negative-value { white-space: nowrap; }
+.negative-label { overflow-wrap: anywhere; }
+.negative-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #a34c3d; }
+.net-result { border-top: 2px solid currentColor; padding-top: 16px; text-align: right; }
+
+@media (max-width: 600px) {
+  .negative-breakdown button {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+  .negative-label { grid-column: 1 / -1; }
 }

@@ -1,5 +1,88 @@
 import { describe, expect, test } from "bun:test";
-import { fmd, niceScale, placeItems, readable, type Item } from "./model";
+import { allocatedNet, postingAmount, fmd, levelItems, normalize, reconciliationNote, signedBreakdown, niceScale, placeItems, readable, type Item, type NormGroup } from "./model";
+import { BudgetJsonSchema } from "../../types/BudgetJsonSchema";
+import { chartHistory, changeOver } from "./model";
+
+test("deduction charts show magnitude and growth without modifying signed data", () => {
+  const signed = [{ y: 2024, v: 0 }, { y: 2025, v: -100 }, { y: 2026, v: -150 }];
+  const chart = chartHistory(signed, true);
+  expect(chart.deduction).toBe(true);
+  expect(chart.points.map((p) => p.v)).toEqual([0, 100, 150]);
+  expect(changeOver(chart.points.slice(1), () => false).pct).toBe(50);
+  expect(signed.map((p) => p.v)).toEqual([0, -100, -150]);
+  expect(chartHistory(signed, false)).toEqual({ points: signed, deduction: false });
+  for (const amounts of [[-10, 20], [0, 0], [10, 20], []]) {
+    const points = amounts.map((v, y) => ({ v, y }));
+    expect(chartHistory(points, true)).toEqual({ points, deduction: false });
+  }
+});
+
+describe("positive-only treemap shares", () => {
+  test("negative adjustments do not inflate shares, including Övriga drilldown", () => {
+    const group: NormGroup = {
+      key: "ink1000", code: "1000", title: "Skatter", total: 100,
+      rows: [80, 39, 0.5, 0.5, -20, 0].map((v, id) => ({ key: String(id), id, title: String(id), v })),
+    };
+    const level = levelItems([group], "rev", group, false);
+    expect(level.parentTotal).toBe(120);
+    expect(level.items.reduce((s, it) => s + it.v / level.parentTotal, 0)).toBeCloseTo(1, 12);
+    const tail = level.items.find((it) => it.rest)!;
+    const drilled = levelItems([group], "rev", group, true);
+    expect(drilled.parentTotal).toBe(level.parentTotal);
+    expect(drilled.items.reduce((s, it) => s + it.v, 0)).toBe(tail.v);
+    expect(reconciliationNote(group)).toContain("Andelar av positiva poster");
+    expect(signedBreakdown(group)).toMatchObject({ positive: 120, negative: -20, net: 100 });
+    expect(signedBreakdown(group).negativeRows.map((r) => r.v)).toEqual([-20]);
+    expect(allocatedNet(80, group)).toBeCloseTo(80 * 100 / 120, 12);
+    expect(drilled.items.reduce((s, it) => s + allocatedNet(it.v, group), 0)).toBeCloseTo(allocatedNet(tail.v, group), 12);
+    expect(allocatedNet(0, { ...group, rows: [] })).toBe(0);
+  });
+
+  test("all budget years reconcile while shares sum to one", async () => {
+    const directory = new URL("../../data/", import.meta.url).pathname;
+    for await (const file of new Bun.Glob("[0-9][0-9][0-9][0-9].json").scan(directory)) {
+      const budget = BudgetJsonSchema.parse(await Bun.file(`${directory}/${file}`).json());
+      const revenues = normalize(budget, "rev");
+      const expenses = normalize(budget, "exp");
+      const revenueSum = revenues.reduce((s, g) => s + g.total, 0);
+      const expenseSum = expenses.reduce((s, g) => s + g.total, 0);
+      expect(Math.abs(revenueSum - budget.revenuesTotal)).toBeLessThanOrEqual(2);
+      expect(expenseSum).toBe(budget.expensesTotal);
+      expect(Math.abs((expenseSum - revenueSum) - (budget.expensesTotal - budget.revenuesTotal))).toBeLessThanOrEqual(2);
+      for (const view of ["rev", "exp"] as const) {
+        const groups = view === "rev" ? revenues : expenses;
+        for (const group of groups) {
+          // Some official groups have a subtotal but no detailed rows.
+          if (!group.rows.length) continue;
+          const net = group.rows.reduce((s, r) => s + r.v, 0);
+          const breakdown = signedBreakdown(group);
+          expect(Math.abs(breakdown.positive + breakdown.negative - breakdown.net)).toBeLessThanOrEqual(2);
+          expect(breakdown.negativeRows.every((r) => r.v < 0)).toBe(true);
+          expect(Math.abs(net - group.total)).toBeLessThanOrEqual(2);
+          const level = levelItems(groups, view, group, false);
+          if (!level.items.length) continue;
+          expect(level.items.reduce((s, it) => s + it.v / level.parentTotal, 0)).toBeCloseTo(1, 12);
+          expect(level.items.reduce((s, it) => s + allocatedNet(it.v, group), 0)).toBeCloseTo(group.total, 4);
+          expect(level.items.reduce((s, it) => s + it.v * breakdown.netRatio, 0)).toBeCloseTo(group.total, 4);
+          // Allocation follows inflation scaling, without changing shares.
+          const scaled = { ...group, total: group.total * 1.2, rows: group.rows.map((r) => ({ ...r, v: r.v * 1.2 })) };
+          expect(allocatedNet(level.items[0]!.v * 1.2, scaled)).toBeCloseTo(allocatedNet(level.items[0]!.v, group) * 1.2, 4);
+        }
+      }
+    }
+  });
+});
+
+test("positive / allocated net labels share units only when appropriate", () => {
+  const group: NormGroup = { key: "tax", code: "1000", title: "Tax", total: 50_000_000,
+    rows: [{ key: "p", id: 1, title: "Positive", v: 100_000_000 }, { key: "n", id: 2, title: "Negative", v: -50_000_000 }] };
+  const breakdown = signedBreakdown(group);
+  expect(postingAmount(20_000_000, breakdown)).toBe("20 / 10 mdkr");
+  expect(postingAmount(150_000, breakdown)).toBe("0,2 mdkr / 75 mnkr");
+  expect(postingAmount(-50_000_000, breakdown)).toBe("−50 mdkr");
+  expect(postingAmount(20_000_000, null)).toBe("20 mdkr");
+  expect(postingAmount(20_000_000, signedBreakdown({ ...group, rows: group.rows.slice(0, 1) }))).toBe("20 mdkr");
+});
 
 const values = (s: ReturnType<typeof niceScale>) => s.grid.map((g) => g.v);
 

@@ -20,6 +20,9 @@ import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type Scale, typ
 import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
 import {
   COPY,
+  DEDUCTION_NOTE,
+  chartHistory,
+  ALLOCATION_NOTE,
   INK,
   PAPER,
   NF0,
@@ -31,6 +34,7 @@ import {
   displayFor,
   fmd,
   fpct,
+  ftkr,
   groupPanelColor,
   historyPoints,
   hueOf,
@@ -38,9 +42,11 @@ import {
   niceScale,
   normalize,
   placeItems,
+  postingAmount,
   pricesFor,
   sign,
   signed,
+  signedBreakdown,
   X,
   type Display,
   type Fmt,
@@ -362,7 +368,7 @@ function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, titl
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
-  const points = historyPoints(years, budgets, view, gkey, row, factorOf, toUnit);
+  const { points, deduction } = chartHistory(historyPoints(years, budgets, view, gkey, row, factorOf, toUnit), row != null);
   const { first, last, pct } = changeOver(points, nominal);
   const dark = fg !== INK;
   // In kronor the headline is the relative change with the amount below; in
@@ -380,6 +386,7 @@ function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, titl
           <div className="heading">
             <span className="kicker">
               {kicker}
+              {deduction ? ` · ${DEDUCTION_NOTE}` : ""}
               {unitNote}
               {priceNote}
               {years.some(nominal) ? ` · ${nominalNote}` : ""}
@@ -475,7 +482,7 @@ function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, onHover, 
         <span className="share" style={{ fontSize: shareSize }}>
           {share}
         </span>
-        <span className="value">{fmd(it.v)}</span>
+        <span className="value">{info.value}</span>
       </span>
     </div>
   );
@@ -1217,6 +1224,8 @@ function App() {
   // Items at the current drill level, with what a click on each does.
   const level = B ? levelItems(all, view, group, rest) : { items: [], parentTotal: total };
   const parentTotal = level.parentTotal;
+  const breakdown = group ? signedBreakdown(group) : null;
+  const parentBasis = group ? `${breakdown && breakdown.negative < 0 ? "positiva poster inom " : ""}${group.title.toLowerCase()}` : "";
   const items: Item[] = level.items;
   const clickOn = (it: Item) => () => {
     if (!group) {
@@ -1250,9 +1259,9 @@ function App() {
       share: fpct(group ? shareOfParent : shareOfAll),
       info: {
         title: `${it.code ? `${it.code} · ` : ""}${it.label}`,
-        value: fmd(it.v),
+        value: postingAmount(it.v, breakdown),
         share: group
-          ? `${fpct(shareOfParent)} av ${group.title.toLowerCase()} · ${fpct(shareOfAll)} av ${T.all}`
+          ? `${fpct(shareOfParent)} av ${parentBasis} · ${fpct(shareOfAll)} av ${T.all}${negs.length ? " (brutto)" : ""}`
           : `${fpct(shareOfAll)} av ${T.all}`,
         hint: it.drill ? "Klicka för att utforska" : "Klicka för att visa historik",
       },
@@ -1636,6 +1645,21 @@ function App() {
 
         {!overview && !about && !updates && !searching && (
           <>
+            {breakdown && breakdown.negative < 0 && (
+              <section className="reconciliation" aria-label="Från positiva poster till netto">
+                <div className="reconciliation-totals">
+                  <div><span>Positiva poster</span><strong title={ftkr(breakdown.positive)}>{fmd(breakdown.positive)}</strong></div>
+                  <span aria-hidden="true">+</span>
+                  <div><span>Avdrag och justeringar</span><strong title={ftkr(breakdown.negative)}>{fmd(breakdown.negative)}</strong></div>
+                  <span aria-hidden="true">=</span>
+                  <div><span>Netto · hela gruppen</span><strong title={ftkr(breakdown.net)}>{fmd(breakdown.net)}</strong></div>
+                </div>
+                <p>Netto är summan efter avdrag och justeringar. Beloppen är avrundade. Diagrammet ovan visar netto när ingen enskild post är vald.</p>
+                <h2>{rest ? "Övriga positiva poster" : "Positiva poster före avdrag och justeringar"}</h2>
+                <p>Blockens procenttal är andelar av hela gruppens positiva poster. Avdrag och justeringar visas separat nedanför.</p>
+                <p>Belopp: <strong>positivt / proportionellt fördelat netto</strong>. {ALLOCATION_NOTE}</p>
+              </section>
+            )}
             <div className="map" style={{ height: mapH }}>
               {placed.map(({ it, x, y, w, h }) => {
                 const { bg, fg } = colorOf(it, !!group);
@@ -1688,13 +1712,37 @@ function App() {
                         <span className="title" lang="sv">
                           {it.label}
                         </span>
-                        <span className="value">{fmd(it.v)}</span>
+                        <span className="value">{rowInfo.value}</span>
                         <span className="share">{share}</span>
                       </button>
                     </li>
                   );
                 })}
               </ul>
+            )}
+            {breakdown && breakdown.negative < 0 && (
+              <section className="negative-breakdown" aria-labelledby="negative-heading">
+                <h2 id="negative-heading">Avdrag och justeringar <span>{fmd(breakdown.negative)}</span></h2>
+                <p>Hela gruppens negativa poster. Procenttalen visar andelar av avdragen och justeringarna. Välj en post för att se dess historik.</p>
+                <ul>
+                  {breakdown.negativeRows.map((row) => {
+                    const share = row.v / breakdown.negative * 100;
+                    return <li key={row.key}>
+                      <button type="button" aria-pressed={focusedRow?.key === row.key} onClick={() => {
+                        setItemKey((key) => key === row.key ? null : row.key);
+                        setPendingItem(null);
+                        setHover(null);
+                      }}>
+                        <span className="negative-label">{row.id} · {row.title}</span>
+                        <span className="negative-value" title={ftkr(row.v)}>{fmd(row.v)}</span>
+                        <span>{fpct(share)}</span>
+                        <span className="negative-bar" aria-hidden="true" style={{ width: `${share}%` }} />
+                      </button>
+                    </li>;
+                  })}
+                </ul>
+                <p className="net-result">Netto för hela gruppen: <strong title={ftkr(breakdown.net)}>{fmd(breakdown.net)}</strong></p>
+              </section>
             )}
           </>
         )}
