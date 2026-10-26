@@ -27,7 +27,7 @@ Statsbudgeten.se är byggd av mig i egen hög person. Du hittar mig på [proddal
 - Statens budget: [Statens budget som Excel](https://www.regeringen.se/sveriges-regering/finansdepartementet/statens-budget/statens-budget-som-excel/) från Regeringskansliet, Finansdepartementet.
 - Inflation: [Inflation i Sverige](https://www.scb.se/hitta-statistik/statistik-efter-amne/priser-och-ekonomiska-tendenser/priser/konsumentprisindex-kpi/pong/tabell-och-diagram/historiska-tal/inflation-i-sverige/) från SCB, konsumentprisindex (KPI).
 
-Budgetfilerna är regeringens specifikation av budgetens utgifter och inkomster för respektive år, i tusental kronor. Inflationsjusteringen använder SCB:s årliga förändring av KPI och räknar om beloppen till prisnivån för det senaste år som har ett fast inflation. T.ex. 2026 har inte en slutligtig inflation, eftersom året ännu inte är över.
+Budgetfilerna är regeringens specifikation av budgetens utgifter och inkomster för respektive år, i tusental kronor. Inflationsjusteringen använder SCB:s årliga förändring av KPI och räknar om beloppen till prisnivån för det senaste år som har ett fast inflation. T.ex. 2026 har inte en slutgiltig inflation, eftersom året ännu inte är över.
 
 ## Källmaterial
 
