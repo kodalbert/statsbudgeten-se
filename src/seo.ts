@@ -46,7 +46,7 @@ const yearOf = (route: Route, data: Data) => (route.year != null && data.years.i
  */
 export function canonicalPath(route: Route, data: Data): string {
   const latest = data.years[0] ?? null;
-  return buildUrl({ ...route, q: "", real: false, unit: "kr", rest: false, year: yearOf(route, data) }, latest);
+  return buildUrl({ ...route, q: "", real: false, unit: "kr", from: null, to: null, rest: false, year: yearOf(route, data) }, latest);
 }
 
 // ---- Sitemap and robots -------------------------------------------------------------
@@ -55,7 +55,7 @@ export function canonicalPath(route: Route, data: Data): string {
 export function sitemapPaths(data: Data): string[] {
   const latest = data.years[0] ?? null;
   const paths = ["/", "/om", "/uppdateringar"];
-  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, q: "" };
+  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, from: null, to: null, q: "" };
   for (const year of data.years) {
     const budget = data.budgets[year];
     if (!budget) continue;
