@@ -956,9 +956,9 @@ dialog.share::backdrop {
 /* ---- About page ---- */
 
 .panel.about {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  /* Grows with its content so the stage scrolls and the credit line follows
+     the text instead of staying pinned at the bottom of the viewport. */
+  flex: 1 0 auto;
   background: var(--surface);
   color: var(--ink);
 }
@@ -1169,6 +1169,7 @@ dialog.share::backdrop {
 /* ---- Footer info bar ---- */
 
 .info {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -1197,9 +1198,25 @@ dialog.share::backdrop {
 /* ---- Credit line ---- */
 
 .credit {
-  margin: -6px 0 0;
+  flex: none;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
   font-size: 12px;
   color: var(--muted);
+}
+.credit .credit-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.credit .credit-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .credit a {
   color: inherit;
@@ -1468,12 +1485,7 @@ dialog.share::backdrop {
   .panel .infobox .ib-diff {
     text-align: left;
   }
-  /* Fixed height: the text changes on every tap, and a footer that grows or
-     shrinks would move the treemap under the finger mid-tap. */
   .info {
-    height: 64px;
-    overflow: hidden;
-    align-content: flex-start;
     gap: 2px 12px;
     font-size: 13px;
   }
