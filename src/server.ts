@@ -13,13 +13,15 @@ import { parseMarkdown } from "./markdown";
 import { HEAD_LINKS, canonicalPath, prerender, robotsTxt, sitemapXml, structuredData } from "./seo";
 import { createMcp } from "./mcp";
 
-const root = new URL("..", import.meta.url).pathname;
+// `import.meta.dir` is a filesystem path. A file-URL pathname (`/C:/...` on
+// Windows) makes Bun.Glob fail, so the year list never includes data/*.json.
+const root = `${import.meta.dir}/../`;
 
 /** Years that have a data/<year>.json file, newest first. */
 function listYears(): number[] {
   return [...new Bun.Glob("data/[0-9][0-9][0-9][0-9].json").scanSync(root)]
     .map((p) => Number(p.match(/(\d{4})\.json$/)?.[1]))
-    .filter((y) => Number.isFinite(y))
+    .filter((y) => Number.isFinite(y) && y >= 2010)
     .sort((a, b) => b - a);
 }
 
@@ -27,14 +29,14 @@ const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 
 /** The source workbooks in examples/, for download from the about page. */
 function listSources() {
-  const files = [...new Bun.Glob("examples/*.{xlsx,xls}").scanSync(root)].map((p) => p.replace(/^examples\//, ""));
+  const files = [...new Bun.Glob("examples/*.{xlsx,xls,pdf}").scanSync(root)].map((p) => p.replace(/\\/g, "/").replace(/^examples\//, ""));
   const budgets = files
-    .filter((f) => /^\d{4}\.xlsx?$/.test(f))
+    .filter((f) => /^\d{4}\.(xlsx?|pdf)$/i.test(f))
     .sort()
     .reverse()
     .map((f) => ({ file: f, label: `Statens budget ${f.slice(0, 4)}`, size: Bun.file(`${root}examples/${f}`).size }));
   const others = files
-    .filter((f) => !/^\d{4}\.xlsx?$/.test(f))
+    .filter((f) => !/^\d{4}\.(xlsx?|pdf)$/i.test(f))
     .sort()
     .map((f) => ({ file: f, label: /inflation/i.test(f) ? "Inflation i Sverige (SCB)" : f, size: Bun.file(`${root}examples/${f}`).size }));
   return [...budgets, ...others];
@@ -225,12 +227,13 @@ const server = Bun.serve({
     "/api/sources": () => Response.json(listSources()),
     "/examples/:file": async (req) => {
       const { file } = req.params;
-      if (!/^[\w.-]+\.xlsx?$/i.test(file)) return new Response("Bad file", { status: 400 });
+      if (!/^[\w.-]+\.(xlsx?|pdf)$/i.test(file)) return new Response("Bad file", { status: 400 });
       const f = Bun.file(`${root}examples/${file}`);
       if (!(await f.exists())) return new Response("Not found", { status: 404 });
+      const type = file.toLowerCase().endsWith(".pdf") ? "application/pdf" : XLSX_TYPE;
       return new Response(f, {
         headers: {
-          "content-type": XLSX_TYPE,
+          "content-type": type,
           "content-disposition": `attachment; filename="${file}"`,
           "cache-control": "public, max-age=86400",
         },
