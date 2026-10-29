@@ -13,7 +13,9 @@ import { parseMarkdown } from "./markdown";
 import { HEAD_LINKS, canonicalPath, prerender, robotsTxt, sitemapXml, structuredData } from "./seo";
 import { createMcp } from "./mcp";
 
-const root = new URL("..", import.meta.url).pathname;
+// `import.meta.dir` is a filesystem path. A file-URL pathname (`/C:/...` on
+// Windows) makes Bun.Glob fail, so the year list never includes data/*.json.
+const root = `${import.meta.dir}/../`;
 
 /** Years that have a data/<year>.json file, newest first. */
 function listYears(): number[] {
@@ -27,7 +29,7 @@ const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.s
 
 /** The source workbooks in examples/, for download from the about page. */
 function listSources() {
-  const files = [...new Bun.Glob("examples/*.{xlsx,xls}").scanSync(root)].map((p) => p.replace(/^examples\//, ""));
+  const files = [...new Bun.Glob("examples/*.{xlsx,xls}").scanSync(root)].map((p) => p.replace(/\\/g, "/").replace(/^examples\//, ""));
   const budgets = files
     .filter((f) => /^\d{4}\.xlsx?$/.test(f))
     .sort()

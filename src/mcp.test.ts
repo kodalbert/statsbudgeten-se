@@ -4,7 +4,7 @@ import { InflationSchema } from "../types/InflationSchema";
 import { INVALID_PARAMS, INVALID_REQUEST, LATEST_PROTOCOL, METHOD_NOT_FOUND, PARSE_ERROR, createMcp } from "./mcp";
 import type { Data } from "./social";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = `${import.meta.dir}/../`;
 
 /** The repo's real data, as the server loads it. */
 async function loadData(): Promise<Data> {
