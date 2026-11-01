@@ -15,6 +15,9 @@ import { createMcp } from "./mcp";
 
 const root = new URL("..", import.meta.url).pathname;
 
+/** Whether this process serves the public site (set by fly.toml). */
+const PRODUCTION = process.env.NODE_ENV === "production";
+
 /** Years that have a data/<year>.json file, newest first. */
 function listYears(): number[] {
   return [...new Bun.Glob("data/[0-9][0-9][0-9][0-9].json").scanSync(root)]
@@ -57,7 +60,7 @@ const asset = (file: string, type: string) =>
   new Response(Bun.file(`${root}assets/${file}`), { headers: { "content-type": type, "cache-control": "public, max-age=86400" } });
 
 /** The public origin, for the absolute URLs in the share tags. */
-const SITE = process.env.SITE_URL ?? (process.env.NODE_ENV === "production" ? "https://statsbudgeten.se" : null);
+const SITE = process.env.SITE_URL ?? (PRODUCTION ? "https://statsbudgeten.se" : null);
 
 /** Every budget year and the inflation rates, read once for the share images. */
 let dataPromise: Promise<Data> | null = null;
@@ -102,6 +105,18 @@ async function socialImage(req: Request): Promise<Response> {
 }
 
 /**
+ * How long the loopback fetch below may take. It only has to cross the
+ * loopback interface, but the first one also waits for Bun to bundle the page,
+ * so the budget is generous. It must stay finite: an unbounded wait here once
+ * took the site down for two and a half hours, every page request parked on a
+ * loopback fetch that never settled while the process sat idle and healthy.
+ */
+const BUNDLE_TIMEOUT_MS = 15_000;
+
+/** The bundled page's bytes and the headers that describe them. */
+type Bundle = { body: ArrayBuffer; contentType: string; cacheControl: string };
+
+/**
  * The bundled app page, fetched from this server over loopback.
  *
  * It must not go through the public URL: in production that request would
@@ -111,15 +126,40 @@ async function socialImage(req: Request): Promise<Response> {
  * refuse with ERR_CONTENT_DECODING_FAILED. So the fetch stays local and only
  * the headers that describe the body are kept.
  */
-async function bundledPage(): Promise<Response> {
-  const res = await fetch(`http://127.0.0.1:${server.port}/__index`, { headers: { accept: "text/html" } });
-  return new Response(res.body, {
-    status: res.status,
-    headers: {
-      "content-type": res.headers.get("content-type") ?? "text/html;charset=utf-8",
-      "cache-control": res.headers.get("cache-control") ?? "no-cache",
-    },
+async function fetchBundle(): Promise<Bundle> {
+  const res = await fetch(`http://127.0.0.1:${server.port}/__index`, {
+    headers: { accept: "text/html" },
+    signal: AbortSignal.timeout(BUNDLE_TIMEOUT_MS),
   });
+  if (!res.ok) throw new Error(`/__index svarade ${res.status}`);
+  return {
+    body: await res.arrayBuffer(),
+    contentType: res.headers.get("content-type") ?? "text/html;charset=utf-8",
+    cacheControl: res.headers.get("cache-control") ?? "no-cache",
+  };
+}
+
+/** A fresh Response per request; a body may only be read once. */
+const bundleResponse = (bundle: Bundle) =>
+  new Response(bundle.body, { headers: { "content-type": bundle.contentType, "cache-control": bundle.cacheControl } });
+
+/**
+ * The bundle, fetched once. In production it never changes, so one fetch
+ * serves every request and concurrent requests share the one in flight
+ * instead of each opening another loopback connection. A failed fetch is not
+ * kept, so the next request retries.
+ */
+let bundlePromise: Promise<Bundle> | null = null;
+async function bundledPage(): Promise<Response> {
+  // Under `bun --hot` the bundle changes on every edit, so it is re-fetched.
+  if (!PRODUCTION) return bundleResponse(await fetchBundle());
+  bundlePromise ??= fetchBundle();
+  try {
+    return bundleResponse(await bundlePromise);
+  } catch (err) {
+    bundlePromise = null;
+    throw err;
+  }
 }
 
 /**
@@ -259,9 +299,14 @@ const server = Bun.serve({
       });
     },
   },
-  development: process.env.NODE_ENV !== "production" && {
+  development: !PRODUCTION && {
     hmr: true,
     console: true,
+  },
+  /** Anything a route throws, so one bad request cannot take the process down. */
+  error(err) {
+    console.error("Serverfel:", err);
+    return new Response("Serverfel", { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } });
   },
 });
 
