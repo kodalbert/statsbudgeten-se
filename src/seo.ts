@@ -46,7 +46,7 @@ const yearOf = (route: Route, data: Data) => (route.year != null && data.years.i
  */
 export function canonicalPath(route: Route, data: Data): string {
   const latest = data.years[0] ?? null;
-  return buildUrl({ ...route, q: "", real: false, unit: "kr", rest: false, year: yearOf(route, data) }, latest);
+  return buildUrl({ ...route, q: "", real: false, unit: "kr", from: null, to: null, rest: false, year: yearOf(route, data) }, latest);
 }
 
 // ---- Sitemap and robots -------------------------------------------------------------
@@ -55,7 +55,7 @@ export function canonicalPath(route: Route, data: Data): string {
 export function sitemapPaths(data: Data): string[] {
   const latest = data.years[0] ?? null;
   const paths = ["/", "/om", "/uppdateringar"];
-  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, q: "" };
+  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, scale: "zero" as const, from: null, to: null, q: "" };
   for (const year of data.years) {
     const budget = data.budgets[year];
     if (!budget) continue;
@@ -209,7 +209,7 @@ export function prerender(route: Route, data: Data, about: Block[], changelog: C
       .map((y) => {
         const b = data.budgets[y];
         if (!b) return "";
-        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, q: "" };
+        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, scale: "zero" as const, from: null, to: null, q: "" };
         const d = b.revenuesTotal - b.expensesTotal;
         return `<tr><th>${y}</th><td>${link(buildUrl({ ...r, view: "exp" }, latest), fmd(b.expensesTotal))}</td><td>${link(buildUrl({ ...r, view: "rev" }, latest), fmd(b.revenuesTotal))}</td><td>${esc((d < 0 ? "−" : "+") + fmd(Math.abs(d)))}</td></tr>`;
       })
@@ -225,9 +225,11 @@ export function prerender(route: Route, data: Data, about: Block[], changelog: C
   const crumbs = [link("/", SITE_NAME), link(buildUrl({ ...r, group: null, rest: false, item: null }, latest), `${T.label} ${s.year}`)];
   if (s.group) crumbs.push(link(buildUrl({ ...r, rest: false, item: null }, latest), s.group.title));
   const crumb = `<nav aria-label="Du är här">${crumbs.join(" › ")}</nav>`;
+  // The other years link to the full series: a year outside this page's
+  // chart window would otherwise open on another year than its label.
   const otherYears = data.years
     .filter((y) => y !== s.year)
-    .map((y) => link(buildUrl({ ...r, year: y }, latest), String(y)));
+    .map((y) => link(buildUrl({ ...r, year: y, from: null, to: null }, latest), String(y)));
   const yearsLine = otherYears.length ? `<p>Samma vy för ${otherYears.join(", ")}.</p>` : "";
 
   let body: string;

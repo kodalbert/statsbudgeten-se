@@ -16,7 +16,7 @@ import { initAnalytics, trackEvent, trackPageView } from "./analytics";
 import { aboutContent } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
-import { buildUrl, groupKey, groupNumber, parseRoute, type Mode, type Scale, type Unit, type View } from "./routes";
+import { buildUrl, groupKey, groupNumber, parseRoute, windowYears, type Mode, type Scale, type Unit, type View } from "./routes";
 import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
 import {
   COPY,
@@ -895,6 +895,8 @@ function App() {
   const [realWanted, setReal] = useState(initialRoute.real);
   const [unit, setUnit] = useState<Unit>(initialRoute.unit);
   const [scale, setScale] = useState<Scale>(initialRoute.scale);
+  const [from, setFrom] = useState<number | null>(initialRoute.from);
+  const [to, setTo] = useState<number | null>(initialRoute.to);
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -950,11 +952,24 @@ function App() {
   }, []);
 
   const latest = yrs.length ? yrs[yrs.length - 1]! : null;
+  const oldest = yrs[0] ?? null;
+  const span = useMemo(() => windowYears(yrs, from, to), [yrs, from, to]);
+  const spanStart = span[0] ?? null;
+  const spanEnd = span.length ? span[span.length - 1]! : null;
+
+  // A budget year outside the chart window moves to the window's last year.
+  useEffect(() => {
+    if (!span.length) return;
+    setYear((y) => (y != null && span.includes(y) ? y : span[span.length - 1]!));
+  }, [span]);
 
   const applyRoute = (r: ReturnType<typeof parseRoute>) => {
     setMode(r.mode);
     setView(r.view);
-    setYear(r.year != null && yrs.includes(r.year) ? r.year : latest);
+    const next = windowYears(yrs, r.from, r.to);
+    setFrom(r.from);
+    setTo(r.to);
+    setYear(r.year != null && next.includes(r.year) ? r.year : (next[next.length - 1] ?? latest));
     setUo(r.group != null ? groupKey(r.view, r.group) : null);
     setRest(r.rest);
     setItemKey(null);
@@ -1196,8 +1211,14 @@ function App() {
   const synced = useRef<string | null>(null);
   const tracked = useRef<string | null>(null);
   useEffect(() => {
-    if (year == null) return;
-    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, scale, q }, latest);
+    // Wait for the data: until the window is known the URL would lose its
+    // bounds, and a year the window is about to move stays off the history.
+    if (year == null || !span.includes(year)) return;
+    // The bounds are written as the window shows them: sorted, inside the
+    // series, and omitted when they are its ends.
+    const urlFrom = spanStart != null && oldest != null && spanStart > oldest ? spanStart : null;
+    const urlTo = spanEnd != null && latest != null && spanEnd < latest ? spanEnd : null;
+    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, scale, from: urlFrom, to: urlTo, q }, latest);
     const current = window.location.pathname + window.location.search;
     if (url !== current) {
       // The first sync only normalises the URL we were opened with, and typing
@@ -1212,7 +1233,7 @@ function App() {
     if (tracked.current !== page) trackPageView(page, mode === "search" ? "Sök" : pageTitle);
     tracked.current = page;
     synced.current = url;
-  }, [mode, view, year, group, rest, itemId, real, unit, scale, q, latest, pageTitle]);
+  }, [mode, view, year, group, rest, itemId, real, unit, scale, span, spanStart, spanEnd, oldest, q, latest, pageTitle]);
 
   // Items at the current drill level, with what a click on each does.
   const level = B ? levelItems(all, view, group, rest) : { items: [], parentTotal: total };
@@ -1447,12 +1468,50 @@ function App() {
                 </button>
               )}
               <div className="pickers">
+                <div className="span-pick">
+                  <label>
+                    Från
+                    <select
+                      value={spanStart ?? ""}
+                      onChange={(e) => {
+                        const y = Number(e.target.value);
+                        setFrom(oldest != null && y === oldest ? null : y);
+                        setTo(spanEnd === latest ? null : spanEnd);
+                        setHover(null);
+                      }}
+                    >
+                      {yrs.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Till
+                    <select
+                      value={spanEnd ?? ""}
+                      onChange={(e) => {
+                        const y = Number(e.target.value);
+                        setFrom(spanStart === oldest ? null : spanStart);
+                        setTo(latest != null && y === latest ? null : y);
+                        setHover(null);
+                      }}
+                    >
+                      {yrs.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <div className="year-picker">
                   <span className="label" id="year-label">
                     Budgetår
                   </span>
                   <div className="seg" role="radiogroup" aria-labelledby="year-label">
-                    {yrs.map((y) => (
+                    {span.map((y) => (
                       <button
                         key={y}
                         type="button"
@@ -1617,12 +1676,12 @@ function App() {
         {searching && <Search budget={B} year={year} q={q} onChange={setQ} onPick={pickHit} />}
 
         {overview && B && year != null && (
-          <Overview years={yrs} budgets={budgets} year={year} scale={scale} {...prices} {...display} />
+          <Overview years={span} budgets={budgets} year={year} scale={scale} {...prices} {...display} />
         )}
 
         {!overview && !about && !updates && !searching && group && year != null && multiYear && (
           <FocusPanel
-            years={yrs}
+            years={span}
             budgets={budgets}
             year={year}
             scale={scale}

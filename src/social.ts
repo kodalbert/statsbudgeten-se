@@ -43,7 +43,7 @@ import {
   type Prices,
   type Series,
 } from "./web/model";
-import { buildUrl, groupKey, type Route, type Scale } from "./web/routes";
+import { buildUrl, groupKey, windowYears, type Route, type Scale } from "./web/routes";
 import { FORMATS, type Format } from "./web/share";
 
 export { FORMATS, parseFormat, routeForImage, socialImagePath, type Format } from "./web/share";
@@ -84,14 +84,15 @@ type Scene = {
  * inflation toggle only applies when the rates allow it.
  */
 export function resolve(route: Route, data: Data): Scene | null {
-  const years = [...data.years].sort((a, b) => a - b);
+  const allYears = [...data.years].sort((a, b) => a - b);
+  const years = windowYears(allYears, route.from, route.to);
   const latest = years[years.length - 1];
   if (latest == null) return null;
   const year = route.year != null && years.includes(route.year) ? route.year : latest;
   const budget = data.budgets[year];
   if (!budget) return null;
 
-  const baseYear = chooseBaseYear(data.rates, years);
+  const baseYear = chooseBaseYear(data.rates, allYears);
   const { factors, convertible } = inflationFactors(data.rates, years, baseYear ?? 0);
   const hasInflation = baseYear != null && convertible.length > 1;
   const prices = pricesFor(route.real && hasInflation, baseYear, factors);
