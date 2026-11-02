@@ -154,3 +154,33 @@ describe("every workbook in examples/", () => {
     });
   }
 });
+
+describe("budgets published as PDF before the excel series", () => {
+  // Printed "Summa anslag" / "Summa inkomster" in bilaga 1 of each budget bill.
+  const known: Record<string, { expenses: number; revenues: number }> = {
+    2010: { expenses: 810_621_184, revenues: 723_028_754 },
+    2011: { expenses: 810_746_352, revenues: 832_988_162 },
+    2012: { expenses: 816_657_851, revenues: 833_113_027 },
+  };
+
+  for (const [year, totals] of Object.entries(known)) {
+    test(`${year} keeps the printed totals, 27 utgiftsområden and nine inkomsttyper`, async () => {
+      const budget = BudgetJsonSchema.parse(await Bun.file(`${import.meta.dir}/../data/${year}.json`).json());
+      expect(budget.expenses.map((g) => g.uo)).toEqual(Array.from({ length: 27 }, (_, i) => i + 1));
+      expect(budget.expenses.every((g) => g.rows.length > 0)).toBe(true);
+      expect(budget.expenses[0]!.title).toBe("Rikets styrelse");
+      expect(budget.revenues.map((g) => g.id_start)).toEqual([1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]);
+      expect(budget.expensesTotal).toBe(totals.expenses);
+      expect(budget.revenuesTotal).toBe(totals.revenues);
+      for (const g of budget.expenses) {
+        expect(g.rows.reduce((s, r) => s + r.expense, 0)).toBe(g.total);
+      }
+    });
+  }
+
+  test("2012 keeps the source's 94 tkr gap between inkomsttyp 1000 and its titlar", async () => {
+    const budget = BudgetJsonSchema.parse(await Bun.file(`${import.meta.dir}/../data/2012.json`).json());
+    const tax = budget.revenues.find((g) => g.id_start === 1000)!;
+    expect(tax.rows.reduce((s, r) => s + r.revenue, 0) - tax.total).toBe(94);
+  });
+});

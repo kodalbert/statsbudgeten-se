@@ -5,7 +5,7 @@ import { FORMATS, HEIGHT, WIDTH, cssColor, pageDescription, pageTitle, renderPng
 import { FORMAT_KEYS } from "./web/share";
 import { parseRoute } from "./web/routes";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = `${import.meta.dir}/../`;
 
 /** The repo's real data, as the server loads it. */
 async function loadData(): Promise<Data> {

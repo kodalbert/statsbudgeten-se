@@ -5,7 +5,7 @@ import { HEAD_LINKS, blocksHtml, canonicalPath, prerender, robotsTxt, sitemapPat
 import type { Data } from "./social";
 import { parseRoute } from "./web/routes";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = `${import.meta.dir}/../`;
 
 /** The repo's real data, as the server loads it; no inflation so the prerender is nominal either way. */
 async function loadData(): Promise<Data> {
