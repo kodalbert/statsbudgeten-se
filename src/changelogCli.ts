@@ -10,7 +10,7 @@ import { $ } from "bun";
 import { ChangelogSchema } from "../types/ChangelogSchema";
 import { GIT_LOG_ARGS, parseGitLog, repoUrl } from "./changelog";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = `${import.meta.dir}/../`;
 $.cwd(root);
 
 const raw = await $`git ${GIT_LOG_ARGS}`.text();
