@@ -29,6 +29,7 @@ import {
   changeOver,
   colorOf,
   displayFor,
+  explainUrl,
   fmd,
   fpct,
   groupPanelColor,
@@ -352,13 +353,15 @@ type FocusProps = Prices & Display & {
   gkey: string;
   /** Row key of the focused posting, or null for the whole group. */
   row: string | null;
+  /** Google AI Mode link explaining the posting or group shown, and its label. */
+  explain: { href: string; label: string };
   kicker: string;
   title: string;
   bg: string;
   fg: string;
 };
 
-function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, title, bg, fg, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: FocusProps) {
+function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, title, bg, fg, explain, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: FocusProps) {
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
@@ -387,6 +390,15 @@ function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, titl
             <span className="name" lang="sv">
               {title}
             </span>
+            <a
+              className="explain"
+              href={explain.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent("explain_posting", { view, group: gkey, posting: row ?? undefined })}
+            >
+              {explain.label}
+            </a>
           </div>
           <div className="delta">
             <span className="kicker">
@@ -1690,6 +1702,10 @@ function App() {
             view={view}
             gkey={group.key}
             row={focusedRow?.key ?? null}
+            explain={{
+              href: explainUrl(view, group, focusedRow),
+              label: focusedRow ? "Förklara budgetposten" : view === "rev" ? "Förklara inkomsttypen" : "Förklara utgiftsområdet",
+            }}
             kicker={focusedRow ? `${group.code} · ${group.title}` : `${group.code} · ${T.kind}`}
             title={focusedRow ? focusedRow.title : group.title}
             bg={panelColor.bg}
