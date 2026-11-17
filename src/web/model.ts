@@ -429,3 +429,19 @@ export function historyPoints(years: number[], budgets: Record<number, BudgetJso
     return { y, v: toUnit(v, y) };
   });
 }
+
+/**
+ * A Google search in AI Mode (`udm=50`) asking for a plain-language explanation,
+ * focused on what it means for ordinary people, of what the focus panel shows: a single posting, or with `row` null the whole utgiftsområde or
+ * inkomsttyp. Everything is named with its number as the site shows it: an
+ * anslag with its utgiftsområde (anslag numbers restart in every area), an
+ * inkomsttitel alone.
+ */
+export function explainUrl(view: View, group: NormGroup, row: NormRow | null): string {
+  const area = view === "rev" ? `inkomsttyp ${group.code} ${group.title}` : `utgiftsområde ${group.code.replace(/^UO /, "")} ${group.title}`;
+  const what = row
+    ? `statsbudgetposten ${row.title.trim()} (${view === "rev" ? `inkomsttitel ${row.id}` : `anslag ${row.id} inom ${area}`})`
+    : `${area} i statsbudgeten`;
+  const q = `Förklara med enkla ord, utan facktermer, vad ${what} är och vad det betyder för vanliga människor i Sverige. Ge gärna konkreta exempel från vardagen.`;
+  return `https://www.google.com/search?udm=50&q=${encodeURIComponent(q)}`;
+}

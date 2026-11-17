@@ -767,6 +767,26 @@ dialog.share::backdrop {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.panel .explain {
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  opacity: 0.8;
+  transition: opacity 0.15s;
+}
+.panel .explain:hover,
+.panel .explain:focus-visible {
+  opacity: 1;
+}
+.panel .explain::after {
+  content: " ↗";
+}
 .panel .legend {
   display: flex;
   gap: 14px;

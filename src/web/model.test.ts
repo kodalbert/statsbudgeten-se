@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { fmd, fpct, levelItems, niceScale, placeItems, readable, type Item, type NormGroup } from "./model";
+import { explainUrl, fmd, fpct, levelItems, niceScale, placeItems, readable, type Item, type NormGroup } from "./model";
 
 const values = (s: ReturnType<typeof niceScale>) => s.grid.map((g) => g.v);
 
@@ -160,5 +160,37 @@ describe("levelItems", () => {
     const { items, parentTotal } = levelItems(all, "rev", all[1]!, false);
     expect(items.map((it) => it.v)).toEqual([-100, -50]);
     expect(parentTotal).toBe(-150);
+  });
+});
+
+describe("explainUrl", () => {
+  const ask = (what: string) =>
+    `Förklara med enkla ord, utan facktermer, vad ${what} är och vad det betyder för vanliga människor i Sverige. Ge gärna konkreta exempel från vardagen.`;
+  const q = (url: string) => {
+    const u = new URL(url);
+    expect(u.origin + u.pathname).toBe("https://www.google.com/search");
+    expect(u.searchParams.get("udm")).toBe("50");
+    return u.searchParams.get("q");
+  };
+
+  test("names an anslag with its number and utgiftsområde", () => {
+    const group: NormGroup = { key: "uo6", code: "UO 6", title: "Försvar och samhällets krisberedskap", total: 0, rows: [] };
+    const row = { key: "Förbandsverksamhet och beredskap", id: 1, title: "Förbandsverksamhet och beredskap", v: 0 };
+    expect(q(explainUrl("exp", group, row))).toBe(
+      ask("statsbudgetposten Förbandsverksamhet och beredskap (anslag 1 inom utgiftsområde 6 Försvar och samhällets krisberedskap)"),
+    );
+  });
+
+  test("names an inkomsttitel with its number, encoding & and spaces", () => {
+    const group: NormGroup = { key: "ink1000", code: "1000", title: "Skatter m.m.", total: 0, rows: [] };
+    const row = { key: "1111", id: 1111, title: " Statlig inkomstskatt & avgift ", v: 0 };
+    expect(q(explainUrl("rev", group, row))).toBe(ask("statsbudgetposten Statlig inkomstskatt & avgift (inkomsttitel 1111)"));
+  });
+
+  test("names a whole utgiftsområde or inkomsttyp when no posting is focused", () => {
+    const uo: NormGroup = { key: "uo6", code: "UO 6", title: "Försvar och samhällets krisberedskap", total: 0, rows: [] };
+    expect(q(explainUrl("exp", uo, null))).toBe(ask("utgiftsområde 6 Försvar och samhällets krisberedskap i statsbudgeten"));
+    const ink: NormGroup = { key: "ink1000", code: "1000", title: "Skatter m.m.", total: 0, rows: [] };
+    expect(q(explainUrl("rev", ink, null))).toBe(ask("inkomsttyp 1000 Skatter m.m. i statsbudgeten"));
   });
 });
