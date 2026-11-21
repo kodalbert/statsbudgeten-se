@@ -501,7 +501,7 @@ ${out.join("\n")}
 </svg>`;
 }
 
-const fontDir = new URL("../assets/fonts/", import.meta.url).pathname;
+const fontDir = `${import.meta.dir}/../assets/fonts/`;
 const FONTS = ["Inter-Regular.ttf", "Inter-SemiBold.ttf", "Inter-Bold.ttf"].map((f) => `${fontDir}${f}`);
 
 /** The share image for a route as PNG bytes in the format's size, or null when there is no data to draw. */
