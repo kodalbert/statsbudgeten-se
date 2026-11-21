@@ -6,6 +6,7 @@
   "scripts": {
     "convert": "bun src/cli.ts",
     "convert-inflation": "bun src/inflationCli.ts",
+    "changelog": "bun src/changelogCli.ts",
     "web": "bun --hot src/server.ts"
   },
   "devDependencies": {

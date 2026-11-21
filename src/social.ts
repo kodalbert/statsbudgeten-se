@@ -43,7 +43,7 @@ import {
   type Prices,
   type Series,
 } from "./web/model";
-import { buildUrl, groupKey, type Route } from "./web/routes";
+import { buildUrl, groupKey, windowYears, type Route, type Scale } from "./web/routes";
 import { FORMATS, type Format } from "./web/share";
 
 export { FORMATS, parseFormat, routeForImage, socialImagePath, type Format } from "./web/share";
@@ -84,14 +84,15 @@ type Scene = {
  * inflation toggle only applies when the rates allow it.
  */
 export function resolve(route: Route, data: Data): Scene | null {
-  const years = [...data.years].sort((a, b) => a - b);
+  const allYears = [...data.years].sort((a, b) => a - b);
+  const years = windowYears(allYears, route.from, route.to);
   const latest = years[years.length - 1];
   if (latest == null) return null;
   const year = route.year != null && years.includes(route.year) ? route.year : latest;
   const budget = data.budgets[year];
   if (!budget) return null;
 
-  const baseYear = chooseBaseYear(data.rates, years);
+  const baseYear = chooseBaseYear(data.rates, allYears);
   const { factors, convertible } = inflationFactors(data.rates, years, baseYear ?? 0);
   const hasInflation = baseYear != null && convertible.length > 1;
   const prices = pricesFor(route.real && hasInflation, baseYear, factors);
@@ -110,6 +111,7 @@ export function resolve(route: Route, data: Data): Scene | null {
 /** The document title for a route, as the app sets it. */
 export function pageTitle(route: Route, data: Data): string {
   if (route.mode === "about") return "Om sajten";
+  if (route.mode === "updates") return "Uppdateringar";
   if (route.mode === "search") return route.q ? `Sök: ${route.q}` : "Sök";
   if (route.mode === "overview") return "Inkomster och utgifter";
   const s = resolve(route, data);
@@ -260,15 +262,15 @@ type Box = { x: number; y: number; w: number; h: number };
  * an area and a line per series, a dot per year with its value, and the
  * years underneath. The chosen year is drawn bigger.
  */
-function lineChart(box: Box, series: Series[], years: number[], year: number, nominal: (y: number) => boolean, paper: string, ink: string, grid: string, fmt: Display["fmt"]): string {
+function lineChart(box: Box, series: Series[], years: number[], year: number, nominal: (y: number) => boolean, scale: Scale, paper: string, ink: string, grid: string, fmt: Display["fmt"]): string {
   const n = years.length;
-  const { Y, grid: lines, step } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad);
+  const { Y, grid: lines, step, base } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad, scale);
   const px = (i: number) => box.x + (X(i, n) / 100) * box.w;
   const py = (v: number) => box.y + (Y(v) / 100) * box.h;
   const out: string[] = [];
   for (const g of lines) {
     const y = py(g.v);
-    out.push(`<line x1="${box.x}" x2="${box.x + box.w}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${grid}" stroke-width="1"/>`);
+    out.push(`<line x1="${box.x}" x2="${box.x + box.w}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${g.zero ? ink : grid}" stroke-opacity="${g.zero ? 0.35 : 1}" stroke-width="1"/>`);
     out.push(text(box.x - 10, y + 4, fmt.grid(g.v, step), { size: 12, fill: ink, anchor: "end", opacity: 0.65 }));
   }
   const sel = Math.max(0, years.indexOf(year));
@@ -278,7 +280,8 @@ function lineChart(box: Box, series: Series[], years: number[], year: number, no
   for (const s of series) {
     const color = s.color ?? ink;
     const pts = s.points.map((p, i) => `${px(i).toFixed(1)},${py(p.v).toFixed(1)}`).join(" ");
-    out.push(`<polygon points="${px(0).toFixed(1)},${box.y + box.h} ${pts} ${px(n - 1).toFixed(1)},${box.y + box.h}" fill="${color}" opacity="${s.color ? 0.08 : 0.1}"/>`);
+    const floor = (box.y + (base / 100) * box.h).toFixed(1);
+    out.push(`<polygon points="${px(0).toFixed(1)},${floor} ${pts} ${px(n - 1).toFixed(1)},${floor}" fill="${color}" opacity="${s.color ? 0.08 : 0.1}"/>`);
     out.push(`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
   }
   // With several series, each year's highest value is labelled above its dot
@@ -346,7 +349,7 @@ function overviewPanel(box: Box, s: Scene): string {
     { key: "exp", label: "Utgifter", color: EXPENSE, points: totals.map((t) => ({ y: t.y, v: t.exp })) },
     { key: "rev", label: "Inkomster", color: REVENUE, points: totals.map((t) => ({ y: t.y, v: t.rev })) },
   ];
-  out.push(lineChart(chart, series, years, year, nominal, PAPER, INK, "rgba(11,11,11,0.12)", fmt));
+  out.push(lineChart(chart, series, years, year, nominal, s.route.scale, PAPER, INK, "rgba(11,11,11,0.12)", fmt));
   if (years.some(nominal)) out.push(text(left, box.y + box.h - 12, nominalNote, { size: 12, fill: INK, opacity: 0.65 }));
   return out.join("\n");
 }
@@ -389,7 +392,7 @@ function focusPanel(box: Box, s: Scene): string {
   out.push(text(right, top + 36, delta.big, { size: 20, weight: 700, fill: fg, anchor: "end", spacing: "-0.4" }));
   out.push(text(right, top + 54, delta.small, { size: 13, weight: 600, fill: fg, anchor: "end", opacity: 0.75 }));
   const chart: Box = { x: left + 56, y: top + 84, w: box.w - pad * 2 - 56 - 10, h: box.h - 16 - 84 - 40 };
-  out.push(lineChart(chart, [{ key: "v", label: title, points }], years, year, nominal, bg, fg, dark ? "rgba(255,255,255,0.22)" : "rgba(11,11,11,0.12)", fmt));
+  out.push(lineChart(chart, [{ key: "v", label: title, points }], years, year, nominal, s.route.scale, bg, fg, dark ? "rgba(255,255,255,0.22)" : "rgba(11,11,11,0.12)", fmt));
   return out.join("\n");
 }
 
@@ -398,7 +401,7 @@ function focusPanel(box: Box, s: Scene): string {
 /** The tiles at the scene's drill level, laid out over the box like the app's map. */
 function treemap(box: Box, s: Scene): string {
   const { items, group, focused } = s;
-  const share = (it: Item) => fpct((it.v / (group ? s.parentTotal : s.gross)) * 100);
+  const share = (it: Item) => fpct((it.v / Math.abs(group ? s.parentTotal : s.gross)) * 100);
   const out: string[] = [];
   const defs: string[] = [];
   layout(items, box.w, box.h).forEach(({ it, x: x0, y: y0, w, h }, i) => {

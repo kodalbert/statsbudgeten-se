@@ -9,13 +9,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BudgetJsonSchema, type BudgetJson } from "../../types/BudgetJsonSchema";
+import { ChangelogSchema, type Changelog, type ChangelogCommit } from "../../types/ChangelogSchema";
 import { InflationSchema } from "../../types/InflationSchema";
 import { chooseBaseYear, inflationFactors } from "../inflation";
 import { initAnalytics, trackEvent, trackPageView } from "./analytics";
 import { aboutContent } from "./content.macro" with { type: "macro" };
 import type { Block, Inline } from "../markdown";
 import { buildIndex, search as runSearch, type SearchHit } from "../search";
-import { buildUrl, groupKey, groupNumber, parseRoute, type Compare, type Mode, type Unit, type View } from "./routes";
+import { buildUrl, groupKey, groupNumber, parseRoute, windowYears, type Compare, type Mode, type Scale, type Unit, type View } from "./routes";
 import { FORMATS, FORMAT_KEYS, socialImagePath, type Format } from "./share";
 import {
   COPY,
@@ -25,6 +26,7 @@ import {
   NF0,
   NF1,
   NF2,
+  SCALES,
   UNITS,
   changeOver,
   colorOf,
@@ -34,12 +36,11 @@ import {
   groupPanelColor,
   historyPoints,
   hueOf,
-  layout,
   levelItems,
   niceScale,
   normalize,
+  placeItems,
   pricesFor,
-  readable,
   sign,
   signed,
   X,
@@ -91,6 +92,10 @@ const Logo = ({ size = 20 }: { size?: number }) => (
 
 type Info = { title: string; value?: string; share?: string; hint?: string };
 
+/** The map never gets shorter than this, and leaves this much room under itself for the list of small items. */
+const MAP_MIN = 140;
+const LIST_PEEK = 120;
+
 // ---- Line chart (overview and group/item history) ------------------------------
 
 /** Series marker: a dot, or a square for the compared series. */
@@ -118,6 +123,8 @@ type LineChartProps = {
   /** The budget year picked in the menu: drawn bigger. */
   year: number;
   nominal: (y: number) => boolean;
+  /** Whether the y-axis starts at zero or hugs the data. */
+  scale: Scale;
   /** Fill for unselected dots, i.e. the panel background. */
   paper: string;
   /** Extra line at the bottom of the info box for year index i, e.g. the saldo. */
@@ -130,12 +137,12 @@ type LineChartProps = {
  * Line chart with an info box: hovering a year's dot or label shows the exact
  * figures and the change from the previous year; clicking pins the box.
  */
-function LineChart({ series, years, year, nominal, paper, extra, fmt }: LineChartProps) {
+function LineChart({ series, years, year, nominal, scale, paper, extra, fmt }: LineChartProps) {
   const open = useRevealed();
   const [hoverYear, setHoverYear] = useState<number | null>(null);
   const [pinnedYear, setPinnedYear] = useState<number | null>(null);
   const n = years.length;
-  const { Y, grid, step } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad);
+  const { Y, grid, step, base } = niceScale(series.flatMap((s) => s.points.map((p) => p.v)), fmt.minPad, scale);
   const pts = (s: Series) => s.points.map((p, i) => `${X(i, n).toFixed(2)},${Y(p.v).toFixed(2)}`).join(" ");
   const selIndex = Math.max(0, years.indexOf(year));
   // With several series, each year's highest value is labelled above its dot
@@ -202,7 +209,7 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt }: LineChar
   return (
     <div className="chart" onClick={() => setPinnedYear(null)}>
       {grid.map((g) => (
-        <div key={g.top} className="gridline" style={{ top: g.top }}>
+        <div key={g.top} className={`gridline${g.zero ? " zero" : ""}`} style={{ top: g.top }}>
           <span>{fmt.grid(g.v, step)}</span>
         </div>
       ))}
@@ -211,7 +218,7 @@ function LineChart({ series, years, year, nominal, paper, extra, fmt }: LineChar
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
           {series.map((s) => (
             <React.Fragment key={s.key}>
-              <polygon points={`${X(0, n)},100 ${pts(s)} ${X(n - 1, n)},100`} fill={s.color ?? "currentColor"} style={{ opacity: s.dash ? 0.05 : s.color ? 0.08 : 0.1 }} />
+              <polygon points={`${X(0, n)},${base.toFixed(2)} ${pts(s)} ${X(n - 1, n)},${base.toFixed(2)}`} fill={s.color ?? "currentColor"} style={{ opacity: s.dash ? 0.05 : s.color ? 0.08 : 0.1 }} />
               <polyline
                 points={pts(s)}
                 fill="none"
@@ -279,6 +286,7 @@ type OverviewProps = Prices & Display & {
   years: number[];
   budgets: Record<number, BudgetJson>;
   year: number;
+  scale: Scale;
 };
 
 const SIDES = [
@@ -286,7 +294,7 @@ const SIDES = [
   { k: "rev", label: "Inkomster", color: "var(--revenue)" },
 ] as const;
 
-function Overview({ years, budgets, year, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: OverviewProps) {
+function Overview({ years, budgets, year, scale, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: OverviewProps) {
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
@@ -334,6 +342,7 @@ function Overview({ years, budgets, year, factorOf, nominal: nominalKr, priceNot
           years={years}
           year={year}
           nominal={nominal}
+          scale={scale}
           paper={PAPER}
           fmt={fmt}
           extra={(i) => {
@@ -354,6 +363,7 @@ type FocusProps = Prices & Display & {
   years: number[];
   budgets: Record<number, BudgetJson>;
   year: number;
+  scale: Scale;
   view: View;
   gkey: string;
   /** Row key of the focused posting, or null for the whole group. */
@@ -383,7 +393,7 @@ function toIndex(points: Point[]): Point[] {
 
 const fpctSigned = (pct: number) => `${sign(pct)}${NF1.format(Math.abs(pct))} %`;
 
-function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, fg, budget, compare, index, onCompare, onClearCompare, onToggleIndex, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: FocusProps) {
+function FocusPanel({ years, budgets, year, scale, view, gkey, row, kicker, title, bg, fg, budget, compare, index, onCompare, onClearCompare, onToggleIndex, factorOf, nominal: nominalKr, priceNote: priceNoteKr, nominalNote, unit, toUnit, fmt, unitNote }: FocusProps) {
   // A share is the same at any price level, so the price notes only apply in kronor.
   const nominal = unit === "kr" ? nominalKr : () => false;
   const priceNote = unit === "kr" ? priceNoteKr : "";
@@ -529,6 +539,7 @@ function FocusPanel({ years, budgets, year, view, gkey, row, kicker, title, bg, 
           years={years}
           year={year}
           nominal={nominal}
+          scale={scale}
           paper={bg}
           fmt={indexed ? FMT_INDEX : fmt}
           extra={
@@ -649,20 +660,17 @@ type TileProps = {
   info: Info;
   hovered: boolean;
   focused: boolean;
-  /** Expanded in place so a tile that was too small to read shows its text. */
-  zoomed: boolean;
   onHover: (info: Info | null) => void;
   onActivate: () => void;
 };
 
-function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, onHover, onActivate }: TileProps) {
+function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, onHover, onActivate }: TileProps) {
   const minD = Math.min(w, h);
   const area = w * h;
-  const showLabel = zoomed || readable(w, h);
-  const showValue = zoomed || (w > 70 && h > 130);
-  const shareSize = zoomed ? 28 : Math.round(Math.max(18, Math.min(64, Math.sqrt(area) / 5.2)));
-  const titleSize = zoomed ? 15 : minD > 220 ? 18 : minD > 130 ? 15 : w < 130 ? 12 : 13;
-  const clamp = zoomed ? 3 : h > 170 ? 3 : h > 80 ? 2 : 1;
+  const showValue = w > 70 && h > 130;
+  const shareSize = Math.round(Math.max(18, Math.min(64, Math.sqrt(area) / 5.2)));
+  const titleSize = minD > 220 ? 18 : minD > 130 ? 15 : w < 130 ? 12 : 13;
+  const clamp = h > 170 ? 3 : h > 80 ? 2 : 1;
 
   return (
     <div
@@ -670,12 +678,12 @@ function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, o
       tabIndex={0}
       aria-label={`${info.title}, ${info.value}`}
       aria-pressed={focused || undefined}
-      className={`tile${hovered ? " hovered" : ""}${focused ? " focused" : ""}${zoomed ? " zoomed" : ""}`}
+      className={`tile${hovered ? " hovered" : ""}${focused ? " focused" : ""}`}
       style={{
         ...rect,
         background: bg,
         color: fg,
-        padding: zoomed || minD > 160 ? "14px 16px" : "8px 10px",
+        padding: minD > 160 ? "14px 16px" : "8px 10px",
         cursor: it.drill ? "zoom-in" : "pointer",
       }}
       onClick={(e) => {
@@ -693,7 +701,7 @@ function Tile({ it, rect, w, h, bg, fg, share, info, hovered, focused, zoomed, o
       onFocus={() => onHover(info)}
       onBlur={() => onHover(null)}
     >
-      <span className="head" style={{ opacity: showLabel ? 1 : 0 }}>
+      <span className="head">
         <span className="code">{it.code}</span>
         <span className="title" lang="sv" style={{ fontSize: titleSize, WebkitLineClamp: clamp }}>
           {it.label}
@@ -776,6 +784,19 @@ function About() {
                 ))}
               </ul>
             );
+          if (b.t === "video")
+            return (
+              <div key={i} className="video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${b.id}`}
+                  title={b.title}
+                  loading="lazy"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
+              </div>
+            );
           return (
             <ul key={i} className="downloads">
               {sources == null && <li className="muted">Hämtar filer …</li>}
@@ -794,6 +815,88 @@ function About() {
             </ul>
           );
         })}
+      </article>
+    </div>
+  );
+}
+
+// ---- Updates page --------------------------------------------------------------
+
+/** Dates like "25 oktober 2026". */
+const DAY = new Intl.DateTimeFormat("sv-SE", { dateStyle: "long" });
+
+/**
+ * The Uppdateringar page: the deployed version's commit history, from the
+ * committed data/changelog.json (src/changelog.ts), grouped by day. Subjects
+ * link to the commit on GitHub when the repository URL is known.
+ */
+function Updates() {
+  const [log, setLog] = useState<Changelog | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/changelog")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (cancelled) return;
+        const parsed = ChangelogSchema.safeParse(j);
+        setLog(parsed.success ? parsed.data : null);
+      })
+      .catch(() => !cancelled && setLog(null));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const days = useMemo(() => {
+    const byDay = new Map<string, ChangelogCommit[]>();
+    for (const c of log?.commits ?? []) {
+      if (!byDay.has(c.date)) byDay.set(c.date, []);
+      byDay.get(c.date)!.push(c);
+    }
+    return [...byDay.entries()];
+  }, [log]);
+
+  return (
+    <div className="panel about updates">
+      <article className="prose" lang="sv">
+        <h1>Uppdateringar</h1>
+        <p>
+          Vad som ändrats på statsbudgeten.se, ur versionshistoriken för den version av sajten som är i drift.
+          {log?.repo && (
+            <>
+              {" "}
+              Hela historiken finns på{" "}
+              <a href={log.repo} target="_blank" rel="noopener">
+                GitHub
+              </a>
+              .
+            </>
+          )}
+        </p>
+        {log === undefined && <p className="muted">Hämtar ändringar …</p>}
+        {log === null && <p className="muted">Kunde inte läsa ändringshistoriken.</p>}
+        {log?.commits.length === 0 && <p className="muted">Inga ändringar att visa.</p>}
+        {days.map(([date, commits]) => (
+          <section key={date}>
+            <h2>
+              <time dateTime={date}>{DAY.format(new Date(date))}</time>
+            </h2>
+            <ul className="commits">
+              {commits.map((c) => (
+                <li key={c.hash}>
+                  {log?.repo ? (
+                    <a href={`${log.repo}/commit/${c.hash}`} target="_blank" rel="noopener">
+                      {c.subject}
+                    </a>
+                  ) : (
+                    c.subject
+                  )}
+                  <span className="muted"> · {c.author}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </article>
     </div>
   );
@@ -1030,21 +1133,23 @@ function App() {
   const [cmp, setCmp] = useState<Compare | null>(initialRoute.cmp);
   const [indexWanted, setIndex] = useState(initialRoute.index);
   const [unit, setUnit] = useState<Unit>(initialRoute.unit);
+  const [scale, setScale] = useState<Scale>(initialRoute.scale);
+  const [from, setFrom] = useState<number | null>(initialRoute.from);
+  const [to, setTo] = useState<number | null>(initialRoute.to);
   const [q, setQ] = useState(initialRoute.q);
   const [hover, setHover] = useState<Info | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
-  /** The settings popover on desktop (inflation, year, unit). */
+  /** The settings popover on desktop (inflation, year, unit, y-axis). */
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
-  /** Key of a too-small tile that has been expanded in place, see `readable`. */
-  const [zoomKey, setZoomKey] = useState<string | null>(null);
   const [rates, setRates] = useState<Record<string, number>>({});
+  /** The stage's width and the height left for the map under the history panel. */
   const [size, setSize] = useState({ W: 1000, H: 600 });
   const [error, setError] = useState(false);
-  const mapRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   // Load the list of years and every budget file (the charts need all years).
   useEffect(() => {
@@ -1085,23 +1190,25 @@ function App() {
     };
   }, []);
 
-  // Treemap is laid out in real pixels.
-  useEffect(() => {
-    const el = mapRef.current;
-    if (!el) return;
-    const measure = () => setSize({ W: el.clientWidth || 1000, H: el.clientHeight || 600 });
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, [mode]);
-
   const latest = yrs.length ? yrs[yrs.length - 1]! : null;
+  const oldest = yrs[0] ?? null;
+  const span = useMemo(() => windowYears(yrs, from, to), [yrs, from, to]);
+  const spanStart = span[0] ?? null;
+  const spanEnd = span.length ? span[span.length - 1]! : null;
+
+  // A budget year outside the chart window moves to the window's last year.
+  useEffect(() => {
+    if (!span.length) return;
+    setYear((y) => (y != null && span.includes(y) ? y : span[span.length - 1]!));
+  }, [span]);
 
   const applyRoute = (r: ReturnType<typeof parseRoute>) => {
     setMode(r.mode);
     setView(r.view);
-    setYear(r.year != null && yrs.includes(r.year) ? r.year : latest);
+    const next = windowYears(yrs, r.from, r.to);
+    setFrom(r.from);
+    setTo(r.to);
+    setYear(r.year != null && next.includes(r.year) ? r.year : (next[next.length - 1] ?? latest));
     setUo(r.group != null ? groupKey(r.view, r.group) : null);
     setRest(r.rest);
     setItemKey(null);
@@ -1110,6 +1217,7 @@ function App() {
     setCmp(r.cmp);
     setIndex(r.index);
     setUnit(r.unit);
+    setScale(r.scale);
     setQ(r.q);
     setHover(null);
   };
@@ -1128,8 +1236,7 @@ function App() {
       if (menuOpen) return setMenuOpen(false);
       if (shareOpen) return; // the dialog closes itself
       if (settingsOpen) return setSettingsOpen(false);
-      if (zoomKey != null) return setZoomKey(null);
-      if (mode === "about") return showOverview();
+      if (mode === "about" || mode === "updates") return showOverview();
       if (mode === "search") return q ? setQ("") : showOverview();
       if (cmp != null) return setCmp(null);
       if (itemKey != null || pendingItem != null) {
@@ -1141,7 +1248,7 @@ function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [menuOpen, shareOpen, settingsOpen, zoomKey, mode, q, cmp, itemKey, pendingItem, rest]);
+  }, [menuOpen, shareOpen, settingsOpen, mode, q, cmp, itemKey, pendingItem, rest]);
 
   // The settings popover closes on a click anywhere outside it.
   useEffect(() => {
@@ -1152,8 +1259,6 @@ function App() {
     document.addEventListener("pointerdown", onDown);
     return () => document.removeEventListener("pointerdown", onDown);
   }, [settingsOpen]);
-  // A zoomed tile belongs to one level; leave it when the level changes.
-  useEffect(() => setZoomKey(null), [mode, view, year, uo, rest]);
 
   // The open menu is a modal sheet: the page behind it neither scrolls nor
   // takes focus, focus starts at the close button and returns to the toggle,
@@ -1230,6 +1335,14 @@ function App() {
 
   const showAbout = () => {
     setMode("about");
+    setUo(null);
+    setRest(false);
+    clearFocus();
+    setHover(null);
+  };
+
+  const showUpdates = () => {
+    setMode("updates");
     setUo(null);
     setRest(false);
     clearFocus();
@@ -1363,6 +1476,8 @@ function App() {
   const pageTitle =
     mode === "about"
       ? "Om sajten"
+      : mode === "updates"
+      ? "Uppdateringar"
       : mode === "search"
       ? q ? `Sök: ${q}` : "Sök"
       : mode === "overview"
@@ -1373,11 +1488,14 @@ function App() {
   const synced = useRef<string | null>(null);
   const tracked = useRef<string | null>(null);
   useEffect(() => {
-    if (year == null) return;
-    const url = buildUrl(
-      { mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, cmp: group ? cmp : null, index: indexWanted, q },
-      latest,
-    );
+    // Wait for the data: until the window is known the URL would lose its
+    // bounds, and a year the window is about to move stays off the history.
+    if (year == null || !span.includes(year)) return;
+    // The bounds are written as the window shows them: sorted, inside the
+    // series, and omitted when they are its ends.
+    const urlFrom = spanStart != null && oldest != null && spanStart > oldest ? spanStart : null;
+    const urlTo = spanEnd != null && latest != null && spanEnd < latest ? spanEnd : null;
+    const url = buildUrl({ mode, view, year, group: group ? groupNumber(group.key) : null, rest, item: group ? itemId : null, real, unit, scale, from: urlFrom, to: urlTo, cmp: group ? cmp : null, index: indexWanted, q }, latest);
     const current = window.location.pathname + window.location.search;
     if (url !== current) {
       // The first sync only normalises the URL we were opened with, and typing
@@ -1392,7 +1510,7 @@ function App() {
     if (tracked.current !== page) trackPageView(page, mode === "search" ? "Sök" : pageTitle);
     tracked.current = page;
     synced.current = url;
-  }, [mode, view, year, group, rest, itemId, real, unit, cmp, indexWanted, q, latest, pageTitle]);
+  }, [mode, view, year, group, rest, itemId, real, unit, scale, span, spanStart, spanEnd, oldest, cmp, indexWanted, q, latest, pageTitle]);
 
   // Items at the current drill level, with what a click on each does.
   const level = B ? levelItems(all, view, group, rest) : { items: [], parentTotal: total };
@@ -1417,8 +1535,55 @@ function App() {
 
   const { W, H } = size;
   const sumItems = items.reduce((s, it) => s + it.v, 0) || 1;
-  const rects = layout(items, W, H);
+  // Tiles too small for their label are listed under the map instead. The
+  // layout always leaves room for the first rows of that list, so whether
+  // the list shows up cannot change the layout; when nothing is listed the
+  // map simply takes the room back. The stage scrolls for the rest of it.
+  const mapRoom = Math.max(MAP_MIN, H - LIST_PEEK);
+  const { placed, listed } = placeItems(items, W, mapRoom);
+  const mapH = listed.length ? mapRoom : Math.max(MAP_MIN, H);
+  const infoOf = (it: Item): { info: Info; share: string } => {
+    // Against the magnitude, so deductions read as negative shares even in a
+    // group whose own total is negative.
+    const shareOfParent = (it.v / Math.abs(parentTotal)) * 100;
+    const shareOfAll = (it.v / gross) * 100;
+    return {
+      share: fpct(group ? shareOfParent : shareOfAll),
+      info: {
+        title: `${it.code ? `${it.code} · ` : ""}${it.label}`,
+        value: fmd(it.v),
+        share: group
+          ? `${fpct(shareOfParent)} av ${group.title.toLowerCase()} · ${fpct(shareOfAll)} av ${T.all}`
+          : `${fpct(shareOfAll)} av ${T.all}`,
+        hint: it.drill ? "Klicka för att utforska" : "Klicka för att visa historik",
+      },
+    };
+  };
   const multiYear = yrs.length > 1;
+  const hasPanel = !!group && year != null && multiYear;
+
+  // The treemap is laid out in real pixels. Its room is measured from the
+  // stage and the history panel, never from the map itself: the list under
+  // the map takes space from it, so measuring the map would feed back into
+  // which items are listed and the two would keep resizing each other.
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || mode !== "explore") return;
+    const measure = () => {
+      const panel = el.querySelector<HTMLElement>(".panel.focus");
+      const gap = parseFloat(getComputedStyle(el).gap) || 0;
+      const used = panel ? panel.getBoundingClientRect().bottom - el.getBoundingClientRect().top + el.scrollTop + gap : 0;
+      const credit = el.querySelector<HTMLElement>(".credit");
+      const foot = credit ? credit.getBoundingClientRect().height + gap : 0;
+      setSize({ W: el.clientWidth || 1000, H: Math.max(0, el.clientHeight - used - foot) || 600 });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    const panel = el.querySelector(".panel.focus");
+    if (panel) ro.observe(panel);
+    return () => ro.disconnect();
+  }, [mode, hasPanel]);
 
   // The focus panel takes the group colour, or the focused posting's tile colour.
   const focusItem = focusedRow ? items.find((it) => it.key === focusedRow.key) : undefined;
@@ -1429,6 +1594,8 @@ function App() {
   const saldoShown = B && year != null ? display.toUnit(B.revenuesTotal * f, year) - display.toUnit(B.expensesTotal * f, year) : 0;
   const base: Info = mode === "about"
     ? { title: "Om Statsbudgeten", hint: "Esc eller Översikt för att gå tillbaka" }
+    : mode === "updates"
+    ? { title: "Uppdateringar", hint: "Esc eller Översikt för att gå tillbaka" }
     : mode === "search"
     ? { title: `Sök i budgeten ${year ?? ""}`, hint: q ? "Pil upp/ner och Enter väljer · Esc rensar" : "Skriv för att söka" }
     : !B
@@ -1444,18 +1611,21 @@ function App() {
         ? {
             title: rest ? T.rest : group.title,
             value: fmd(rest ? sumItems : group.total),
-            share: `${fpct(((rest ? sumItems : group.total) / gross) * 100)} av ${T.all} ${year} · ${items.length} block${priceNote}`,
+            share: `${fpct(((rest ? sumItems : group.total) / gross) * 100)} av ${T.all} ${year} · ${
+              placed.length ? `${placed.length} block${listed.length ? ` och ${listed.length} rader` : ""}` : `${listed.length} rader`
+            }${priceNote}`,
             hint: year != null && nominal(year) ? nominalNote : focusedRow ? "Esc för att avmarkera" : "Klicka på ett block för att se dess historik",
           }
         : {
             title: `${T.heading} ${year}`,
             value: fmd(total),
-            share: `${groups.length} ${T.areas}${negNote}${priceNote}`,
+            share: `${all.filter((g) => g.total !== 0).length} ${T.areas}${negNote}${priceNote}`,
             hint: year != null && nominal(year) ? nominalNote : "Klicka på ett block",
           };
   const info = hover ?? base;
   const overview = mode === "overview";
   const about = mode === "about";
+  const updates = mode === "updates";
   const searching = mode === "search";
 
   return (
@@ -1518,7 +1688,7 @@ function App() {
               ["rev", "var(--revenue)", B ? B.revenuesTotal * f : undefined],
             ] as const
           ).map(([k, dot, tot]) => {
-            const active = !overview && !about && !searching && view === k;
+            const active = !overview && !about && !updates && !searching && view === k;
             return (
               <button key={k} type="button" className={`tab${active ? " active" : ""}`} aria-current={active ? "page" : undefined} onClick={() => showGraph(k)}>
                 <span className="dot" style={{ background: dot }} />
@@ -1578,12 +1748,50 @@ function App() {
                 </button>
               )}
               <div className="pickers">
+                <div className="span-pick">
+                  <label>
+                    Från
+                    <select
+                      value={spanStart ?? ""}
+                      onChange={(e) => {
+                        const y = Number(e.target.value);
+                        setFrom(oldest != null && y === oldest ? null : y);
+                        setTo(spanEnd === latest ? null : spanEnd);
+                        setHover(null);
+                      }}
+                    >
+                      {yrs.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Till
+                    <select
+                      value={spanEnd ?? ""}
+                      onChange={(e) => {
+                        const y = Number(e.target.value);
+                        setFrom(spanStart === oldest ? null : spanStart);
+                        setTo(latest != null && y === latest ? null : y);
+                        setHover(null);
+                      }}
+                    >
+                      {yrs.map((y) => (
+                        <option key={y} value={y}>
+                          {y}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <div className="year-picker">
                   <span className="label" id="year-label">
                     Budgetår
                   </span>
                   <div className="seg" role="radiogroup" aria-labelledby="year-label">
-                    {yrs.map((y) => (
+                    {span.map((y) => (
                       <button
                         key={y}
                         type="button"
@@ -1624,6 +1832,30 @@ function App() {
                     ))}
                   </div>
                 </div>
+                <div className="year-picker scale-picker">
+                  <span className="label" id="scale-label">
+                    Y-axel
+                  </span>
+                  <div className="seg" role="radiogroup" aria-labelledby="scale-label">
+                    {SCALES.map((sc) => (
+                      <button
+                        key={sc.k}
+                        type="button"
+                        role="radio"
+                        aria-checked={sc.k === scale}
+                        className={sc.k === scale ? "active" : ""}
+                        title={sc.title}
+                        onClick={() => {
+                          if (sc.k === scale) return;
+                          trackEvent("toggle_scale", { scale: sc.k });
+                          setScale(sc.k);
+                        }}
+                      >
+                        {sc.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1636,6 +1868,12 @@ function App() {
             <span className="crumb">
               <button type="button" className="current" disabled>
                 Om sajten
+              </button>
+            </span>
+          ) : updates ? (
+            <span className="crumb">
+              <button type="button" className="current" disabled>
+                Uppdateringar
               </button>
             </span>
           ) : searching ? (
@@ -1701,7 +1939,7 @@ function App() {
             </>
           )}
         </nav>
-        {!about && !searching && B && (
+        {!about && !updates && !searching && B && (
           <button type="button" className="share-toggle" onClick={() => setShareOpen(true)} title="Dela som bild eller länk">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M12 3v13M7 8l5-5 5 5M5 14v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
@@ -1712,19 +1950,21 @@ function App() {
       </header>
       <Share open={shareOpen} onClose={() => setShareOpen(false)} title={pageTitle} />
 
-      <div className="stage" inert={menuOpen || undefined}>
+      <div className="stage" ref={stageRef} inert={menuOpen || undefined}>
         {about && <About />}
+        {updates && <Updates />}
         {searching && <Search budget={B} year={year} q={q} onChange={setQ} onPick={pickHit} />}
 
         {overview && B && year != null && (
-          <Overview years={yrs} budgets={budgets} year={year} {...prices} {...display} />
+          <Overview years={span} budgets={budgets} year={year} scale={scale} {...prices} {...display} />
         )}
 
-        {!overview && !about && !searching && group && year != null && multiYear && (
+        {!overview && !about && !updates && !searching && group && year != null && multiYear && (
           <FocusPanel
-            years={yrs}
+            years={span}
             budgets={budgets}
             year={year}
+            scale={scale}
             view={view}
             gkey={group.key}
             row={focusedRow?.key ?? null}
@@ -1743,83 +1983,96 @@ function App() {
           />
         )}
 
-        {!overview && !about && !searching && (
-          <div className="map" ref={mapRef} onClick={() => setZoomKey(null)}>
-            {rects.map(({ it, x: x0, y: y0, w: w0, h: h0 }) => {
-              const { bg, fg } = colorOf(it, !!group);
-              const zoomed = zoomKey === it.key;
-              // Expand a zoomed tile to a readable size, kept inside the map.
-              let [x, y, w, h] = [x0, y0, w0, h0];
-              if (zoomed) {
-                w = Math.min(W, Math.max(w0, 230));
-                h = Math.min(H, Math.max(h0, 150));
-                x = Math.max(0, Math.min(W - w, x0 - (w - w0) / 2));
-                y = Math.max(0, Math.min(H - h, y0 - (h - h0) / 2));
-              }
-              const shareOfParent = (it.v / parentTotal) * 100;
-              const shareOfAll = (it.v / gross) * 100;
-              const tileInfo: Info = {
-                title: `${it.code ? `${it.code} · ` : ""}${it.label}`,
-                value: fmd(it.v),
-                share: group
-                  ? `${fpct(shareOfParent)} av ${group.title.toLowerCase()} · ${fpct(shareOfAll)} av ${T.all}`
-                  : `${fpct(shareOfAll)} av ${T.all}`,
-                hint: zoomed
-                  ? it.drill
-                    ? "Klicka igen för att utforska"
-                    : "Klicka igen för att visa historik"
-                  : it.drill
-                    ? "Klicka för att utforska"
-                    : "Klicka för att visa historik",
-              };
-              const act = clickOn(it);
-              const activate = () => {
-                if (!zoomed && !readable(w0, h0)) {
-                  // Too small to read: show it first, act on the next click.
-                  setZoomKey(it.key);
-                  setHover({ ...tileInfo, hint: it.drill ? "Klicka igen för att utforska" : "Klicka igen för att visa historik" });
-                  return;
-                }
-                setZoomKey(null);
-                act();
-              };
-              return (
-                <Tile
-                  key={it.key}
-                  it={it}
-                  rect={{
-                    left: `${(x / W) * 100}%`,
-                    top: `${(y / H) * 100}%`,
-                    width: `${(w / W) * 100}%`,
-                    height: `${(h / H) * 100}%`,
-                  }}
-                  w={w}
-                  h={h}
-                  bg={bg}
-                  fg={fg}
-                  share={fpct(group ? shareOfParent : shareOfAll)}
-                  info={tileInfo}
-                  hovered={hover?.title === tileInfo.title}
-                  focused={!!focusedRow && it.key === focusedRow.key}
-                  zoomed={zoomed}
-                  onHover={setHover}
-                  onActivate={activate}
-                />
-              );
-            })}
-          </div>
+        {!overview && !about && !updates && !searching && (
+          <>
+            {/* A group of only negative postings has no tiles at all: skip the map. */}
+            {placed.length > 0 && (
+            <div className="map" style={{ height: mapH }}>
+              {placed.map(({ it, x, y, w, h }) => {
+                const { bg, fg } = colorOf(it, !!group);
+                const { info: tileInfo, share } = infoOf(it);
+                return (
+                  <Tile
+                    key={it.key}
+                    it={it}
+                    rect={{
+                      left: `${(x / W) * 100}%`,
+                      top: `${(y / mapRoom) * 100}%`,
+                      width: `${(w / W) * 100}%`,
+                      height: `${(h / mapRoom) * 100}%`,
+                    }}
+                    w={w}
+                    h={(h * mapH) / mapRoom}
+                    bg={bg}
+                    fg={fg}
+                    share={share}
+                    info={tileInfo}
+                    hovered={hover?.title === tileInfo.title}
+                    focused={!!focusedRow && it.key === focusedRow.key}
+                    onHover={setHover}
+                    onActivate={clickOn(it)}
+                  />
+                );
+              })}
+            </div>
+            )}
+            {listed.length > 0 && (
+              <ul className="small" aria-label="Poster som är för små eller negativa och därför visas som rader">
+                {listed.map((it) => {
+                  const { bg } = colorOf(it, !!group);
+                  const { info: rowInfo, share } = infoOf(it);
+                  const focused = !!focusedRow && it.key === focusedRow.key;
+                  return (
+                    <li key={it.key}>
+                      <button
+                        type="button"
+                        className={`row${hover?.title === rowInfo.title ? " hovered" : ""}${focused ? " focused" : ""}`}
+                        aria-pressed={focused || undefined}
+                        style={{ cursor: it.drill ? "zoom-in" : "pointer" }}
+                        onClick={clickOn(it)}
+                        onMouseEnter={() => setHover(rowInfo)}
+                        onMouseLeave={() => setHover(null)}
+                        onFocus={() => setHover(rowInfo)}
+                        onBlur={() => setHover(null)}
+                      >
+                        <span className="swatch" style={{ background: bg }} aria-hidden />
+                        <span className="code">{it.code}</span>
+                        <span className="title" lang="sv">
+                          {it.label}
+                        </span>
+                        <span className="value">{fmd(it.v)}</span>
+                        <span className="share">{share}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </>
         )}
+        {mode !== "explore" && (
+          <footer className="info" aria-live="polite">
+            <span className="title">{info.title}</span>
+            <span className="value">{info.value}</span>
+            <span className="share">{info.share}</span>
+            <span className="hint">{info.hint}</span>
+          </footer>
+        )}
+        <p className="credit">
+          <span>
+            © {new Date().getFullYear()} <a href="https://proddalbert.se" target="_blank" rel="noopener">ProddAlbert</a>
+          </span>
+          <span className="credit-links">
+            <a href="https://github.com/kodalbert/statsbudgeten-se" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" width="13" height="13" aria-hidden>
+                <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z" />
+              </svg>
+              GitHub
+            </a>
+            <a href="/uppdateringar" onClick={(e) => { e.preventDefault(); showUpdates(); }}>Uppdateringar</a>
+          </span>
+        </p>
       </div>
-
-      <footer className="info" aria-live="polite" inert={menuOpen || undefined}>
-        <span className="title">{info.title}</span>
-        <span className="value">{info.value}</span>
-        <span className="share">{info.share}</span>
-        <span className="hint">{info.hint}</span>
-      </footer>
-      <p className="credit" inert={menuOpen || undefined}>
-        © {new Date().getFullYear()} <a href="https://proddalbert.se" target="_blank" rel="noopener">Albert (@ProddAlbert)</a> · Data från Regeringskansliet och SCB · <a href="https://github.com/kodalbert/statsbudgeten-se" target="_blank" rel="noopener">Öppen källkod</a>
-      </p>
     </div>
   );
 }

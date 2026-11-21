@@ -102,6 +102,25 @@ describe("revenues", () => {
 describe("every workbook in examples/", () => {
   const files = [...new Bun.Glob("[0-9][0-9][0-9][0-9].xlsx").scanSync(`${import.meta.dir}/../examples`)].sort();
 
+  // The "Summa anslag" / "Summa inkomster" rows of each year's workbook, so
+  // a parser change that silently misreads a file cannot go unnoticed.
+  const knownTotals: Record<string, { expenses: number; revenues: number }> = {
+    2013: { expenses: 834_470_983, revenues: 829_578_474 },
+    2014: { expenses: 856_758_035, revenues: 824_219_318 },
+    2015: { expenses: 890_900_386, revenues: 854_073_839 },
+    2016: { expenses: 926_249_927, revenues: 924_260_869 },
+    2017: { expenses: 971_169_281, revenues: 979_733_829 },
+    2018: { expenses: 1_000_514_994, revenues: 1_042_901_177 },
+    2019: { expenses: 1_026_634_185, revenues: 1_097_499_553 },
+    2020: { expenses: 1_062_385_804, revenues: 1_116_107_806 },
+    2021: { expenses: 1_165_822_520, revenues: 1_105_994_084 },
+    2022: { expenses: 1_204_219_603, revenues: 1_190_994_234 },
+    2023: { expenses: 1_251_870_933, revenues: 1_279_473_213.3 },
+    2024: { expenses: 1_346_694_314, revenues: 1_324_263_505 },
+    2025: { expenses: 1_441_595_890, revenues: 1_373_862_450.64 },
+    2026: { expenses: 1_543_317_501, revenues: 1_374_910_661 },
+  };
+
   test("there are workbooks to test", () => {
     expect(files.length).toBeGreaterThan(0);
   });
@@ -122,9 +141,16 @@ describe("every workbook in examples/", () => {
       expect(budget.revenues[0]!.rows.some((r) => r.id === 1111)).toBe(true);
       // No float noise in the output.
       for (const g of budget.revenues) for (const r of g.rows) expect(r.revenue).toBe(Math.round(r.revenue * 100) / 100);
-      // Plausible magnitudes (tkr): both sides above 1 000 mdkr.
-      expect(budget.expensesTotal).toBeGreaterThan(1_000_000_000);
-      expect(budget.revenuesTotal).toBeGreaterThan(1_000_000_000);
+      // The workbook's own totals, pinned per year.
+      const known = knownTotals[file.replace(".xlsx", "")];
+      if (known) {
+        expect(budget.expensesTotal).toBe(known.expenses);
+        expect(budget.revenuesTotal).toBe(known.revenues);
+      } else {
+        // A new year without pinned totals yet: at least a plausible magnitude.
+        expect(budget.expensesTotal).toBeGreaterThan(1_000_000_000);
+        expect(budget.revenuesTotal).toBeGreaterThan(1_000_000_000);
+      }
     });
   }
 });

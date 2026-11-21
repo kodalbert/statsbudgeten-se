@@ -43,13 +43,14 @@ describe("canonicalPath", () => {
 
 describe("sitemap", () => {
   const paths = sitemapPaths(data);
-  test("lists every year's views, groups and postings once, plus the overview and about", () => {
+  test("lists every year's views, groups and postings once, plus the overview, about and updates", () => {
     expect(paths[0]).toBe("/");
     expect(paths).toContain("/om");
+    expect(paths).toContain("/uppdateringar");
     expect(paths).toContain("/utgifter");
     expect(paths).toContain("/inkomster");
     expect(new Set(paths).size).toBe(paths.length);
-    let expected = 2;
+    let expected = 3;
     for (const y of data.years) {
       const b = data.budgets[y]!;
       expected += 2 + b.expenses.length + b.revenues.length;
@@ -105,8 +106,9 @@ describe("structured data", () => {
     expect(items.map((i) => i.item)).toEqual([`${ORIGIN}/`, `${ORIGIN}/utgifter`, `${ORIGIN}/utgifter/${g.uo}`, `${ORIGIN}/utgifter/${g.uo}/${r.id}`]);
     expect(items.map((i) => i.position)).toEqual([1, 2, 3, 4]);
   });
-  test("about and search have none", () => {
+  test("about, updates and search have none", () => {
     expect(structuredData(route("/om"), data, ORIGIN)).toEqual([]);
+    expect(structuredData(route("/uppdateringar"), data, ORIGIN)).toEqual([]);
     expect(structuredData(route("/sok?q=x"), data, ORIGIN)).toEqual([]);
   });
 });
@@ -154,6 +156,19 @@ describe("prerender", () => {
     expect(prerender(route("/sok?q=<b>"), data, about)).toContain("<h1>Sök i statsbudgeten</h1>");
     expect(prerender(route("/sok?q=<b>"), data, about)).not.toContain("<b>");
   });
+  test("updates lists the changelog's commits with date and author", () => {
+    const changelog = {
+      repo: "https://github.com/kodalbert/statsbudgeten-se",
+      commits: [{ hash: "a".repeat(40), date: "2026-10-25", author: "Albert", subject: "Add <SEO> tags" }],
+    };
+    const html = prerender(route("/uppdateringar"), data, about, changelog);
+    expect(html).toContain("<h1>Uppdateringar</h1>");
+    expect(html).toContain('<time datetime="2026-10-25">2026-10-25</time>');
+    expect(html).toContain("Add &lt;SEO&gt; tags · Albert");
+    expect(html).toContain('<a href="/uppdateringar">');
+    // Without the committed changelog the page still stands.
+    expect(prerender(route("/uppdateringar"), data, about)).toContain("<h1>Uppdateringar</h1>");
+  });
   test("an unknown group falls back to the view's root", () => {
     expect(prerender(route("/utgifter/999"), data, about)).toContain(`<h1>Statens utgifter ${latest}</h1>`);
   });
@@ -163,6 +178,7 @@ describe("prerender", () => {
   });
   test("the head links name the favicon routes Google looks for", () => {
     expect(HEAD_LINKS).toContain('<link rel="icon" href="/favicon.ico"');
+    expect(HEAD_LINKS).toContain('<link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96">');
     expect(HEAD_LINKS).toContain('rel="apple-touch-icon"');
     expect(HEAD_LINKS).toContain('rel="manifest"');
   });

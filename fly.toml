@@ -14,7 +14,21 @@ primary_region = "arn"
   force_https = true
   auto_stop_machines = "stop"
   auto_start_machines = true
-  min_machines_running = 0
+  # One machine always serving: a single wedged instance should not be the
+  # whole site, and a cold start should not be on the critical path.
+  min_machines_running = 1
+
+  # Without this, a process that is alive but no longer answering stays
+  # "started" forever and Fly has no reason to act -- which is how the site
+  # stayed down for two and a half hours on 2026-11-01. The check goes to "/",
+  # the real page path, because the cheaper JSON routes kept answering fine
+  # all through that outage and would have reported the site as healthy.
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/"
 
 [[vm]]
   size = "shared-cpu-1x"

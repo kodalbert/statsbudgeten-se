@@ -16,5 +16,7 @@ export {
   type RevenueRow,
 } from "./types/BudgetRowSchema";
 export { InflationSchema, type Inflation } from "./types/InflationSchema";
+export { ChangelogSchema, ChangelogCommitSchema, type Changelog, type ChangelogCommit } from "./types/ChangelogSchema";
+export { parseGitLog, repoUrl } from "./src/changelog";
 export { chooseBaseYear, inflationFactor, inflationFactors, type InflationRates } from "./src/inflation";
 export { parseInflationWorkbook } from "./src/parseInflation";

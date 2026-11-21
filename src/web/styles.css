@@ -232,7 +232,7 @@ button {
   top: calc(100% + 8px);
   right: 0;
   z-index: 20;
-  min-width: 360px;
+  width: min(440px, calc(100vw - 32px));
   padding: 16px;
   border-radius: 14px;
   background: var(--surface);
@@ -276,6 +276,38 @@ button {
 }
 .popover .year-picker .label {
   font-weight: 600;
+}
+.span-pick {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.span-pick label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary);
+}
+.span-pick select {
+  width: 100%;
+  min-width: 0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  padding: 6px 28px 6px 10px;
+  border: 0;
+  border-radius: 8px;
+  background-color: var(--track);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%2352514e' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  color: var(--ink);
+  cursor: pointer;
+  appearance: none;
 }
 .popover .seg {
   flex-wrap: wrap;
@@ -521,15 +553,85 @@ dialog.share::backdrop {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* The list of small items can run past the bottom: the stage scrolls for it. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .map {
   position: relative;
-  flex: 1;
-  min-height: 0;
+  flex: none;
   border-radius: 14px;
   overflow: hidden;
   background: var(--track);
+}
+
+/* ---- Items too small for a tile, listed under the map ---- */
+
+.small {
+  flex: none;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border-radius: 14px;
+  border: 1px solid var(--divider);
+  background: var(--surface);
+  font-variant-numeric: tabular-nums;
+}
+.small li + li .row {
+  border-top: 1px solid var(--divider);
+}
+.small .row {
+  display: grid;
+  grid-template-columns: 10px minmax(5em, max-content) 1fr max-content 5.5em;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.3;
+  outline: none;
+  transition: background-color 0.15s;
+}
+.small .row.hovered,
+.small .row:hover {
+  background: var(--track);
+}
+.small .row.focused {
+  box-shadow: inset 3px 0 0 var(--ink);
+}
+.small .row:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+.small .swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.small .code {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.small .title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 550;
+}
+.small .value {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.small .share {
+  color: var(--secondary);
+  text-align: right;
+  white-space: nowrap;
 }
 
 /* ---- Tiles ---- */
@@ -560,15 +662,6 @@ dialog.share::backdrop {
 .tile.focused,
 .tile:focus-visible {
   box-shadow: inset 0 0 0 3px currentColor;
-}
-.tile.zoomed {
-  z-index: 5;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.22);
-}
-.tile.zoomed.focused {
-  box-shadow:
-    inset 0 0 0 3px currentColor,
-    0 10px 40px rgba(0, 0, 0, 0.22);
 }
 
 .tile .head {
@@ -733,6 +826,10 @@ dialog.share::backdrop {
   left: 0;
   right: 0;
   border-top: 1px solid var(--grid-color);
+}
+.panel .gridline.zero {
+  border-top-color: currentColor;
+  opacity: 0.35;
 }
 .panel .gridline span {
   position: absolute;
@@ -1031,9 +1128,9 @@ dialog.share::backdrop {
 /* ---- About page ---- */
 
 .panel.about {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  /* Grows with its content so the stage scrolls and the credit line follows
+     the text instead of staying pinned at the bottom of the viewport. */
+  flex: 1 0 auto;
   background: var(--surface);
   color: var(--ink);
 }
@@ -1088,6 +1185,19 @@ dialog.share::backdrop {
   padding: 1px 5px;
   border-radius: 4px;
 }
+.prose .video {
+  aspect-ratio: 16 / 9;
+  margin: 4px 0 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--track);
+}
+.prose .video iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
 .prose .downloads {
   list-style: none;
   padding: 0;
@@ -1109,6 +1219,27 @@ dialog.share::backdrop {
 .prose .muted {
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+
+/* ---- Updates page: the commit list, grouped by day ---- */
+
+.prose .commits {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+.prose .commits li {
+  padding: 6px 0;
+  border-top: 1px solid var(--divider);
+}
+.prose .commits li:last-child {
+  border-bottom: 1px solid var(--divider);
+}
+.prose .commits a {
+  text-decoration: none;
+}
+.prose .commits a:hover {
+  text-decoration: underline;
 }
 
 /* ---- Search page ---- */
@@ -1210,6 +1341,7 @@ dialog.share::backdrop {
 /* ---- Footer info bar ---- */
 
 .info {
+  flex: none;
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
@@ -1238,9 +1370,25 @@ dialog.share::backdrop {
 /* ---- Credit line ---- */
 
 .credit {
-  margin: -6px 0 0;
+  flex: none;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 4px 16px;
   font-size: 12px;
   color: var(--muted);
+}
+.credit .credit-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.credit .credit-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .credit a {
   color: inherit;
@@ -1432,10 +1580,19 @@ dialog.share::backdrop {
   }
   /* Boxes go full-bleed: no side padding, no side rounding. */
   .map,
-  .panel {
+  .panel,
+  .small {
     border-radius: 0;
     border-left: 0;
     border-right: 0;
+  }
+  .small .row {
+    padding: 7px 16px;
+    gap: 10px;
+    grid-template-columns: 10px 1fr max-content 4.5em;
+  }
+  .small .code {
+    display: none;
   }
   .tile {
     border-radius: 8px;
@@ -1520,12 +1677,7 @@ dialog.share::backdrop {
   .panel .infobox .ib-diff {
     text-align: left;
   }
-  /* Fixed height: the text changes on every tap, and a footer that grows or
-     shrinks would move the treemap under the finger mid-tap. */
   .info {
-    height: 64px;
-    overflow: hidden;
-    align-content: flex-start;
     gap: 2px 12px;
     font-size: 13px;
   }

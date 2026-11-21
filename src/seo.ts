@@ -8,6 +8,7 @@
  * about (its title, the numbers, the postings) and links to every page a
  * level down, so the whole site is reachable from plain HTML.
  */
+import type { Changelog } from "../types/ChangelogSchema";
 import type { Block, Inline } from "./markdown";
 import { pageDescription, resolve, type Data } from "./social";
 import { COPY, fmd, fpct } from "./web/model";
@@ -21,10 +22,13 @@ export const SITE_TAGLINE = "Sveriges statsbudget som en karta";
  * rather than written in index.html, because Bun's HTML bundler tries to
  * resolve every link href as a build asset and fails on these routes. Google
  * only picks up a favicon it finds as a <link rel="icon"> on the front page,
- * and it wants /favicon.ico as well.
+ * and it wants /favicon.ico as well. The 96px PNG is for Google too: it asks
+ * for a square icon in a multiple of 48px, and its parser is safest with a
+ * plain PNG (the .ico is kept to classic BMP entries for the same reason).
  */
 export const HEAD_LINKS = [
   '<link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">',
+  '<link rel="icon" href="/favicon-96.png" type="image/png" sizes="96x96">',
   '<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">',
   '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
   '<link rel="manifest" href="/site.webmanifest">',
@@ -42,7 +46,7 @@ const yearOf = (route: Route, data: Data) => (route.year != null && data.years.i
  */
 export function canonicalPath(route: Route, data: Data): string {
   const latest = data.years[0] ?? null;
-  return buildUrl({ ...route, q: "", real: false, unit: "kr", rest: false, year: yearOf(route, data) }, latest);
+  return buildUrl({ ...route, q: "", real: false, unit: "kr", from: null, to: null, rest: false, year: yearOf(route, data) }, latest);
 }
 
 // ---- Sitemap and robots -------------------------------------------------------------
@@ -50,8 +54,8 @@ export function canonicalPath(route: Route, data: Data): string {
 /** Every indexable path: the overview, about, and every year's views, groups and postings. */
 export function sitemapPaths(data: Data): string[] {
   const latest = data.years[0] ?? null;
-  const paths = ["/", "/om"];
-  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, cmp: null, index: false, q: "" };
+  const paths = ["/", "/om", "/uppdateringar"];
+  const base = { mode: "explore" as const, rest: false, real: false, unit: "kr" as const, scale: "zero" as const, from: null, to: null, cmp: null, index: false, q: "" };
   for (const year of data.years) {
     const budget = data.budgets[year];
     if (!budget) continue;
@@ -150,7 +154,7 @@ export function blocksHtml(blocks: Block[]): string {
 const link = (path: string, text: string) => `<a href="${esc(path)}">${esc(text)}</a>`;
 
 /** An amount and its share of a total; a negative amount (a deduction) has no share. */
-const amount = (v: number, of: number) => (v > 0 ? `${fmd(v)} (${fpct((v / of) * 100)})` : `−${fmd(-v)}`);
+const amount = (v: number, of: number) => (v > 0 ? `${fmd(v)} (${fpct((v / Math.abs(of)) * 100)})` : `−${fmd(-v)}`);
 
 /** A posting's or group's amount in every year that has it, oldest first. */
 function history(data: Data, view: Route["view"], group: number, item: number | null): { year: number; v: number }[] {
@@ -183,12 +187,18 @@ const historyTable = (rows: { year: number; v: number }[], what: string) =>
  * its numbers as a table, and links to the pages below it. The app replaces
  * it on mount; crawlers and readers without JavaScript keep it.
  */
-export function prerender(route: Route, data: Data, about: Block[]): string {
+export function prerender(route: Route, data: Data, about: Block[], changelog: Changelog | null = null): string {
   const latest = data.years[0] ?? null;
-  const nav = `<nav aria-label="Huvudmeny">${[link("/", "Översikt"), link("/utgifter", "Utgifter"), link("/inkomster", "Inkomster"), link("/om", "Om sajten")].join(" · ")}</nav>`;
+  const nav = `<nav aria-label="Huvudmeny">${[link("/", "Översikt"), link("/utgifter", "Utgifter"), link("/inkomster", "Inkomster"), link("/om", "Om sajten"), link("/uppdateringar", "Uppdateringar")].join(" · ")}</nav>`;
   const foot = `<p>Alla belopp kommer oförändrade från Regeringskansliet och SCB. Sajten är fristående och öppen källkod.</p>`;
 
   if (route.mode === "about") return `<article class="prerender">${nav}${blocksHtml(about)}</article>`;
+  if (route.mode === "updates") {
+    const items = (changelog?.commits ?? [])
+      .map((c) => `<li><time datetime="${esc(c.date)}">${esc(c.date)}</time> ${esc(c.subject)} · ${esc(c.author)}</li>`)
+      .join("");
+    return `<article class="prerender">${nav}<h1>Uppdateringar</h1><p>Vad som ändrats på statsbudgeten.se, ur versionshistoriken för den version av sajten som är i drift.</p><ul>${items}</ul>${foot}</article>`;
+  }
   if (route.mode === "search") {
     return `<article class="prerender">${nav}<h1>Sök i statsbudgeten</h1><p>Sök bland utgiftsområden, anslag, inkomsttyper och inkomsttitlar i det valda budgetåret.</p>${foot}</article>`;
   }
@@ -199,7 +209,7 @@ export function prerender(route: Route, data: Data, about: Block[]): string {
       .map((y) => {
         const b = data.budgets[y];
         if (!b) return "";
-        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, cmp: null, index: false, q: "" };
+        const r = { mode: "explore" as const, year: y, group: null, rest: false, item: null, real: false, unit: "kr" as const, scale: "zero" as const, from: null, to: null, cmp: null, index: false, q: "" };
         const d = b.revenuesTotal - b.expensesTotal;
         return `<tr><th>${y}</th><td>${link(buildUrl({ ...r, view: "exp" }, latest), fmd(b.expensesTotal))}</td><td>${link(buildUrl({ ...r, view: "rev" }, latest), fmd(b.revenuesTotal))}</td><td>${esc((d < 0 ? "−" : "+") + fmd(Math.abs(d)))}</td></tr>`;
       })
@@ -215,9 +225,11 @@ export function prerender(route: Route, data: Data, about: Block[]): string {
   const crumbs = [link("/", SITE_NAME), link(buildUrl({ ...r, group: null, rest: false, item: null }, latest), `${T.label} ${s.year}`)];
   if (s.group) crumbs.push(link(buildUrl({ ...r, rest: false, item: null }, latest), s.group.title));
   const crumb = `<nav aria-label="Du är här">${crumbs.join(" › ")}</nav>`;
+  // The other years link to the full series: a year outside this page's
+  // chart window would otherwise open on another year than its label.
   const otherYears = data.years
     .filter((y) => y !== s.year)
-    .map((y) => link(buildUrl({ ...r, year: y }, latest), String(y)));
+    .map((y) => link(buildUrl({ ...r, year: y, from: null, to: null }, latest), String(y)));
   const yearsLine = otherYears.length ? `<p>Samma vy för ${otherYears.join(", ")}.</p>` : "";
 
   let body: string;

@@ -3,6 +3,7 @@
  *
  *   /                            overview: inkomster vs utgifter per year
  *   /om                          about page
+ *   /uppdateringar               updates page: the deployed version's commit history
  *   /sok?q=försvar               search page, with the query
  *   /utgifter                    treemap of all utgiftsområden (/inkomster: inkomsttyper)
  *   /utgifter/6                  utgiftsområde 6: its history graph above its anslag
@@ -16,12 +17,16 @@
  *                                drawn in the focus graph for comparison
  *   …?index=1                    …both series as an index, first year = 100
  *   …?andel=inkomster            graphs in percent of the year's revenues (andel=utgifter: of expenses)
+ *   …?skala=relativ              the graphs' y-axis follows the data instead of starting at zero
+ *   …?fran=2018&till=2021        chart window (omitted means every budget year)
  */
 
 export type View = "exp" | "rev";
-export type Mode = "overview" | "explore" | "about" | "search";
+export type Mode = "overview" | "explore" | "about" | "updates" | "search";
 /** What the graphs show: kronor, or percent of the year's revenues or expenses. */
 export type Unit = "kr" | "rev" | "exp";
+/** Where the graphs' y-axis starts: at zero, or just below the data. */
+export type Scale = "zero" | "relative";
 
 /** A second posting or group drawn in the focus graph for comparison. */
 export type Compare = {
@@ -48,6 +53,10 @@ export type Route = {
   /** Draw the compared series as an index (first year = 100). */
   index: boolean;
   unit: Unit;
+  scale: Scale;
+  /** Chart window, inclusive. Null means that end of the available years. */
+  from: number | null;
+  to: number | null;
   /** Search query; only meaningful in search mode. */
   q: string;
 };
@@ -78,8 +87,12 @@ export function parseRoute(url: URL): Route {
   const real = url.searchParams.get("inflation") === "1";
   const year = parseYear(url.searchParams.get("year"));
   const unit: Unit = SLUG_VIEW[url.searchParams.get("andel") ?? ""] ?? "kr";
-  const none = { group: null, rest: false, item: null, real, unit, cmp: null, index: false, q: "" };
+  const scale: Scale = url.searchParams.get("skala") === "relativ" ? "relative" : "zero";
+  const from = parseYear(url.searchParams.get("fran"));
+  const to = parseYear(url.searchParams.get("till"));
+  const none = { group: null, rest: false, item: null, real, unit, scale, from, to, cmp: null, index: false, q: "" };
   if (parts[0] === "om") return { mode: "about", view: "exp", year, ...none };
+  if (parts[0] === "uppdateringar") return { mode: "updates", view: "exp", year, ...none };
   if (parts[0] === "sok") return { mode: "search", view: "exp", year, ...none, q: url.searchParams.get("q")?.trim() ?? "" };
   const view = SLUG_VIEW[parts[0] ?? ""];
   if (!view) return { mode: "overview", view: "exp", year, ...none };
@@ -92,13 +105,14 @@ export function parseRoute(url: URL): Route {
     i++;
   }
   const cmp = parseCompare(url.searchParams.get("jamfor"));
-  return { mode: "explore", view, year, group, rest, item: parseNat(parts[i]), real, unit, cmp, index: cmp != null && url.searchParams.get("index") === "1", q: "" };
+  return { mode: "explore", view, year, group, rest, item: parseNat(parts[i]), real, unit, scale, from, to, cmp, index: cmp != null && url.searchParams.get("index") === "1", q: "" };
 }
 
 /** Path + query for a route. `latest` lets the URL omit the default year. */
 export function buildUrl(r: Route, latest: number | null): string {
   let path = "/";
   if (r.mode === "about") path = "/om";
+  if (r.mode === "updates") path = "/uppdateringar";
   if (r.mode === "search") path = "/sok";
   if (r.mode === "explore") {
     const parts = [VIEW_SLUG[r.view]];
@@ -119,8 +133,24 @@ export function buildUrl(r: Route, latest: number | null): string {
     q.set("jamfor", compareSlug(r.cmp));
     if (r.index) q.set("index", "1");
   }
+  if (r.scale === "relative") q.set("skala", "relativ");
+  if (r.from != null) q.set("fran", String(r.from));
+  if (r.to != null) q.set("till", String(r.to));
   const s = q.toString();
   return s ? `${path}?${s}` : path;
+}
+
+/**
+ * The budget years a chart draws. `from` and `to` are inclusive; a null bound
+ * is that end of `years`. The bounds are swapped when they are out of order,
+ * and a window that misses every year falls back to the whole list.
+ */
+export function windowYears(years: number[], from: number | null, to: number | null): number[] {
+  const sorted = [...years].sort((a, b) => a - b);
+  if (!sorted.length || (from == null && to == null)) return sorted;
+  const [lo, hi] = from != null && to != null && from > to ? [to, from] : [from ?? -Infinity, to ?? Infinity];
+  const span = sorted.filter((y) => y >= lo && y <= hi);
+  return span.length ? span : sorted;
 }
 
 /** The app's internal group key for a URL group number. */

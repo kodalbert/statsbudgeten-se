@@ -5,7 +5,7 @@
  * functions only, no React and no DOM.
  */
 import type { BudgetJson } from "../../types/BudgetJsonSchema";
-import type { Unit, View } from "./routes";
+import type { Scale, Unit, View } from "./routes";
 
 // ---- Design-only tweaks (constants in production) ----------------------------
 
@@ -27,14 +27,17 @@ export const NF1 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 1, ma
 export const NF0 = new Intl.NumberFormat("sv-SE", { maximumFractionDigits: 0 });
 export const NF2 = new Intl.NumberFormat("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-/** Amounts are in tkr; 1 mdkr = 1e6 tkr. */
+/** Amounts are in tkr; 1 mdkr = 1e6 tkr. The unit follows the magnitude, so negative amounts read the same as positive ones. */
 export const fmd = (tkr: number) => {
-  const m = tkr / 1e6;
-  if (m >= 10) return `${NF0.format(m)} mdkr`;
-  if (m >= 0.1) return `${NF1.format(m)} mdkr`;
+  const m = Math.abs(tkr) / 1e6;
+  if (m >= 10) return `${NF0.format(tkr / 1e6)} mdkr`;
+  if (m >= 0.1) return `${NF1.format(tkr / 1e6)} mdkr`;
   return `${NF0.format(tkr / 1e3)} mnkr`;
 };
-export const fpct = (p: number) => `${p >= 10 ? NF0.format(p) : p >= 0.1 ? NF1.format(p) : "<0,1"} %`;
+export const fpct = (p: number) => {
+  const a = Math.abs(p);
+  return `${a >= 10 ? NF0.format(p) : a >= 0.1 ? NF1.format(p) : "<0,1"} %`;
+};
 export const signed = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±") + fmd(Math.abs(v));
 /** Exact amount in tkr, e.g. "1 543 317 501 tkr". */
 export const ftkr = (tkr: number) => `${NF0.format(Math.round(tkr))} tkr`;
@@ -83,6 +86,12 @@ export const UNITS: { k: Unit; label: string; note: string }[] = [
   { k: "kr", label: "kr", note: "" },
   { k: "rev", label: "% av inkomster", note: " · % av inkomsterna" },
   { k: "exp", label: "% av utgifter", note: " · % av utgifterna" },
+];
+
+/** The y-axis options in the settings, see the `skala` query parameter. */
+export const SCALES: { k: Scale; label: string; title: string }[] = [
+  { k: "zero", label: "Börja på 0", title: "Y-axeln börjar på noll, så linjens höjd visar beloppets storlek" },
+  { k: "relative", label: "Relativ", title: "Y-axeln följer värdena, så små förändringar syns tydligare" },
 ];
 
 // ---- Data model ---------------------------------------------------------------
@@ -158,15 +167,18 @@ export type Item = {
 };
 
 /**
- * The tiles at one drill level: the groups of a view, or the postings of one
+ * The items at one drill level: the groups of a view, or the postings of one
  * group (with the small ones bundled into an "Övriga" tile, or only those
- * when `rest` is set). `parentTotal` is what the tiles' shares are of.
+ * when `rest` is set). Negative groups and postings (deductions) come last;
+ * they cannot be tiles, so `placeItems` always puts them in the list.
+ * `parentTotal` is what the tiles' shares are of.
  */
 export function levelItems(all: NormGroup[], view: View, group: NormGroup | null, rest: boolean): { items: Item[]; parentTotal: number } {
   const hues = hueOf(all, view);
   if (!group) {
-    const groups = all.filter((g) => g.total > 0).sort((a, b) => b.total - a.total);
-    const items = groups.map((g, i) => ({
+    const pos = all.filter((g) => g.total > 0).sort((a, b) => b.total - a.total);
+    const neg = all.filter((g) => g.total < 0).sort((a, b) => a.total - b.total);
+    const items = [...pos, ...neg].map((g, i) => ({
       key: g.key,
       id: null,
       code: g.code,
@@ -174,28 +186,30 @@ export function levelItems(all: NormGroup[], view: View, group: NormGroup | null
       v: g.total,
       hue: hues[g.key]!,
       lv: i % 3,
-      rank: i / groups.length,
+      rank: i / (pos.length + neg.length),
       drill: true,
     }));
-    return { items, parentTotal: groups.reduce((s, g) => s + g.total, 0) };
+    return { items, parentTotal: pos.reduce((s, g) => s + g.total, 0) };
   }
   const T = COPY[view];
   const rows = group.rows.filter((r) => r.v > 0).sort((a, b) => b.v - a.v);
+  const negRows = rest ? [] : group.rows.filter((r) => r.v < 0).sort((a, b) => a.v - b.v);
   const sum = rows.reduce((s, r) => s + r.v, 0) || 1;
   const big = rows.filter((r) => r.v / sum >= TAIL_CUT);
   const tail = rows.filter((r) => r.v / sum < TAIL_CUT);
   const useTail = tail.length > 1 && !rest;
   const list = rest ? tail : useTail ? big : rows;
   const hue = hues[group.key]!;
-  const items: Item[] = list.map((r, i) => ({
+  const rowItem = (r: NormGroup["rows"][number], rank: number): Item => ({
     key: r.key,
     id: r.id,
     code: `${T.item} ${r.id ?? ""}`,
     label: r.title,
     v: r.v,
     hue,
-    rank: i / Math.max(1, list.length),
-  }));
+    rank,
+  });
+  const items: Item[] = list.map((r, i) => rowItem(r, i / Math.max(1, list.length)));
   if (useTail) {
     items.push({
       key: "__rest",
@@ -209,6 +223,7 @@ export function levelItems(all: NormGroup[], view: View, group: NormGroup | null
       drill: true,
     });
   }
+  items.push(...negRows.map((r) => rowItem(r, 1)));
   return { items, parentTotal: group.total };
 }
 
@@ -278,14 +293,33 @@ export function squarify<T>(items: { it: T; a: number }[], W: number, H: number)
   return out;
 }
 
-/** Lay the items out over W×H pixels, areas in proportion to their values. */
+/** Lay the items out over W×H pixels, areas in proportion to their values. Items with no positive value have no area and are skipped. */
 export function layout(items: Item[], W: number, H: number): Placed<Item>[] {
-  const sum = items.reduce((s, it) => s + it.v, 0) || 1;
-  return squarify(items.map((it) => ({ it, a: (it.v / sum) * W * H })), W, H);
+  const pos = items.filter((it) => it.v > 0);
+  const sum = pos.reduce((s, it) => s + it.v, 0) || 1;
+  return squarify(pos.map((it) => ({ it, a: (it.v / sum) * W * H })), W, H);
 }
 
-/** A tile this small can't carry its label; the first click zooms it instead of acting. */
+/** A tile this small can't carry its label. */
 export const readable = (w: number, h: number) => w > 84 && h > 54;
+
+/**
+ * The items as tiles over W×H pixels, with the ones that come out too small
+ * to read moved to a list instead. Dropping items frees room for the rest,
+ * so the layout is redone until every tile left is readable. The largest item
+ * is always a tile, so the map is only empty when nothing is positive.
+ * Negative items (deductions) have no area and always go to the list.
+ */
+export function placeItems(items: Item[], W: number, H: number): { placed: Placed<Item>[]; listed: Item[] } {
+  const largest = items.reduce<Item | null>((m, it) => (m == null || it.v > m.v ? it : m), null);
+  let tiles = items.filter((it) => it.v > 0);
+  for (;;) {
+    const placed = layout(tiles, W, H);
+    const small = new Set(placed.filter((p) => !readable(p.w, p.h) && p.it !== largest).map((p) => p.it.key));
+    if (small.size === 0) return { placed, listed: items.filter((it) => !tiles.includes(it)) };
+    tiles = tiles.filter((it) => !small.has(it.key));
+  }
+}
 
 // ---- Line chart scale ---------------------------------------------------------
 
@@ -302,19 +336,39 @@ export const X = (i: number, n: number) => (n === 1 ? 50 : 5 + (i / (n - 1)) * 9
  * plus a small headroom and is not snapped, so the plot fills the panel
  * instead of leaving an empty band up to the next round number.
  */
-export function niceScale(values: number[], minPad: number) {
+/**
+ * The y-axis of a line chart: `Y` maps a value to a percentage from the top,
+ * `grid` lists the gridlines (the one marked `zero` is a zero line inside the
+ * axis, worth drawing stronger) and `base` is where an area fill ends: the
+ * zero line when the axis crosses it, else the axis end nearest zero.
+ *
+ * With `scale` "zero" the axis always reaches zero, so a line's height can be
+ * read as its size; with "relative" it hugs the data, which makes small
+ * changes visible. Negative data pulls the axis below zero in both modes.
+ */
+export function niceScale(values: number[], minPad: number, scale: Scale = "zero") {
   const mn = Math.min(...values);
   const mx = Math.max(...values);
-  const pad = Math.max((mx - mn) * 0.1, mx * 0.04, minPad);
-  const hi = mx + pad;
-  const raw = (hi - Math.max(0, mn - pad)) / 5;
+  const pad = Math.max((mx - mn) * 0.1, Math.max(Math.abs(mx), Math.abs(mn)) * 0.04, minPad);
+  // Headroom on the sides where the data is; the axis never crosses zero
+  // unless the data does, and in "zero" mode it always reaches it.
+  const hi = mx > 0 ? mx + pad : scale === "zero" ? 0 : Math.min(0, mx + pad);
+  const loRaw = mn < 0 ? mn - pad : scale === "zero" ? 0 : Math.max(0, mn - pad);
+  const raw = (hi - loRaw) / 5;
   const mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map((m) => m * mag).find((s) => s >= raw) ?? mag * 10;
-  const lo = Math.max(0, Math.floor((mn - pad) / step) * step);
-  const Y = (v: number) => 100 - ((v - lo) / (hi - lo || 1)) * 100;
-  const grid: { top: string; v: number }[] = [];
-  for (let v = lo; v <= hi + step * 1e-9; v += step) grid.push({ top: `${Y(v)}%`, v });
-  return { Y, grid, step };
+  // The end away from the data snaps to a gridline, so the zero line is always a gridline too.
+  const lo = mx <= 0 ? loRaw : Math.max(mn >= 0 ? 0 : -Infinity, Math.floor(loRaw / step) * step);
+  const top = mx <= 0 ? Math.min(0, Math.ceil(hi / step) * step) : hi;
+  const Y = (v: number) => 100 - ((v - lo) / (top - lo || 1)) * 100;
+  const grid: { top: string; v: number; zero: boolean }[] = [];
+  const first = Math.ceil(lo / step - 1e-9) * step;
+  for (let k = 0; first + k * step <= top + step * 1e-9; k++) {
+    const v = first + k * step;
+    grid.push({ top: `${Y(v)}%`, v, zero: mn < 0 && mx > 0 && Math.abs(v) < step * 1e-9 });
+  }
+  const base = Y(Math.min(Math.max(0, lo), top));
+  return { Y, grid, step, base };
 }
 
 /** Headline change between the first and last year that are in the same prices. */

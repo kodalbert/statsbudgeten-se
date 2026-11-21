@@ -1,0 +1,3768 @@
+{
+  "expenses": [
+    {
+      "total": 12413383,
+      "title": "Rikets styrelse",
+      "rows": [
+        {
+          "title": "Kungliga hov- och slottsstaten",
+          "id": 1,
+          "expense": 127522
+        },
+        {
+          "title": "Riksdagens ledamöter och partier m.m.",
+          "id": 2,
+          "expense": 851870
+        },
+        {
+          "title": "Riksdagens förvaltningsanslag",
+          "id": 3,
+          "expense": 705646
+        },
+        {
+          "title": "Riksdagens fastighetsanslag",
+          "id": 4,
+          "expense": 90000
+        },
+        {
+          "title": "Riksdagens ombudsmän (JO)",
+          "id": 5,
+          "expense": 86242
+        },
+        {
+          "title": "Sametinget",
+          "id": 6,
+          "expense": 40511
+        },
+        {
+          "title": "Regeringskansliet m.m.",
+          "id": 7,
+          "expense": 6885671
+        },
+        {
+          "title": "Länsstyrelserna m.m.",
+          "id": 8,
+          "expense": 2561405
+        },
+        {
+          "title": "Allmänna val och demokrati",
+          "id": 9,
+          "expense": 52340
+        },
+        {
+          "title": "Justitiekanslern",
+          "id": 10,
+          "expense": 39923
+        },
+        {
+          "title": "Datainspektionen",
+          "id": 11,
+          "expense": 44033
+        },
+        {
+          "title": "Svensk författningssamling",
+          "id": 12,
+          "expense": 1300
+        },
+        {
+          "title": "Valmyndigheten",
+          "id": 13,
+          "expense": 19039
+        },
+        {
+          "title": "Stöd till politiska partier",
+          "id": 14,
+          "expense": 171200
+        },
+        {
+          "title": "Åtgärder för nationella minoriteter",
+          "id": 15,
+          "expense": 102917
+        },
+        {
+          "title": "Åtgärder för den nationella minoriteten romer",
+          "id": 16,
+          "expense": 16500
+        },
+        {
+          "title": "Presstödsnämnden",
+          "id": 17,
+          "expense": 6842
+        },
+        {
+          "title": "Presstöd",
+          "id": 18,
+          "expense": 567119
+        },
+        {
+          "title": "Myndigheten för radio och tv",
+          "id": 19,
+          "expense": 25815
+        },
+        {
+          "title": "Svenska institutet för europapolitiska studier samt EU-information",
+          "id": 20,
+          "expense": 17488
+        }
+      ],
+      "uo": 1
+    },
+    {
+      "total": 14589790,
+      "title": "Samhällsekonomi och finansförvaltning",
+      "rows": [
+        {
+          "title": "Statskontoret",
+          "id": 1,
+          "expense": 88429
+        },
+        {
+          "title": "Kammarkollegiet",
+          "id": 2,
+          "expense": 54459
+        },
+        {
+          "title": "Finansinspektionens avgifter till EU:s tillsynsmyndigheter",
+          "id": 3,
+          "expense": 7150
+        },
+        {
+          "title": "Arbetsgivarpolitiska frågor",
+          "id": 4,
+          "expense": 2443
+        },
+        {
+          "title": "Statliga tjänstepensioner m.m.",
+          "id": 5,
+          "expense": 12221000
+        },
+        {
+          "title": "Finanspolitiska rådet",
+          "id": 6,
+          "expense": 9547
+        },
+        {
+          "title": "Konjunkturinstitutet",
+          "id": 7,
+          "expense": 59918
+        },
+        {
+          "title": "Ekonomistyrningsverket",
+          "id": 8,
+          "expense": 158422
+        },
+        {
+          "title": "Statistiska centralbyrån",
+          "id": 9,
+          "expense": 545442
+        },
+        {
+          "title": "Bidragsfastigheter",
+          "id": 10,
+          "expense": 339500
+        },
+        {
+          "title": "Finansinspektionen",
+          "id": 11,
+          "expense": 452507
+        },
+        {
+          "title": "Riksgäldskontoret",
+          "id": 12,
+          "expense": 304474
+        },
+        {
+          "title": "Bokföringsnämnden",
+          "id": 13,
+          "expense": 9683
+        },
+        {
+          "title": "Vissa garanti- och medlemsavgifter",
+          "id": 14,
+          "expense": 2370
+        },
+        {
+          "title": "Riksrevisionen",
+          "id": 15,
+          "expense": 314446
+        },
+        {
+          "title": "Finansmarknadsforskning",
+          "id": 16,
+          "expense": 20000
+        }
+      ],
+      "uo": 2
+    },
+    {
+      "total": 10580976,
+      "title": "Skatt, tull och exekution",
+      "rows": [
+        {
+          "title": "Skatteverket",
+          "id": 1,
+          "expense": 7091609
+        },
+        {
+          "title": "Kronofogdemyndigheten",
+          "id": 2,
+          "expense": 1807030
+        },
+        {
+          "title": "Tullverket",
+          "id": 3,
+          "expense": 1682337
+        }
+      ],
+      "uo": 3
+    },
+    {
+      "total": 40757864,
+      "title": "Rättsväsendet",
+      "rows": [
+        {
+          "title": "Polisorganisationen",
+          "id": 1,
+          "expense": 21159726
+        },
+        {
+          "title": "Säkerhetspolisen",
+          "id": 2,
+          "expense": 1142065
+        },
+        {
+          "title": "Åklagarmyndigheten",
+          "id": 3,
+          "expense": 1396032
+        },
+        {
+          "title": "Ekobrottsmyndigheten",
+          "id": 4,
+          "expense": 609267
+        },
+        {
+          "title": "Sveriges Domstolar",
+          "id": 5,
+          "expense": 5370755
+        },
+        {
+          "title": "Kriminalvården",
+          "id": 6,
+          "expense": 7884483
+        },
+        {
+          "title": "Brottsförebyggande rådet",
+          "id": 7,
+          "expense": 97107
+        },
+        {
+          "title": "Rättsmedicinalverket",
+          "id": 8,
+          "expense": 371005
+        },
+        {
+          "title": "Gentekniknämnden",
+          "id": 9,
+          "expense": 5287
+        },
+        {
+          "title": "Brottsoffermyndigheten",
+          "id": 10,
+          "expense": 37519
+        },
+        {
+          "title": "Ersättning för skador på grund av brott",
+          "id": 11,
+          "expense": 122241
+        },
+        {
+          "title": "Rättsliga biträden m.m.",
+          "id": 12,
+          "expense": 2468657
+        },
+        {
+          "title": "Kostnader för vissa skaderegleringar m.m.",
+          "id": 13,
+          "expense": 40082
+        },
+        {
+          "title": "Avgifter till vissa internationella sammanslutningar",
+          "id": 14,
+          "expense": 20374
+        },
+        {
+          "title": "Bidrag till lokalt brottsförebyggande arbete",
+          "id": 15,
+          "expense": 7157
+        },
+        {
+          "title": "Säkerhets- och integritetsskyddsnämnden",
+          "id": 16,
+          "expense": 18368
+        },
+        {
+          "title": "Domarnämnden",
+          "id": 17,
+          "expense": 7739
+        }
+      ],
+      "uo": 4
+    },
+    {
+      "total": 1899062,
+      "title": "Internationell samverkan",
+      "rows": [
+        {
+          "title": "Avgifter till internationella organisationer",
+          "id": 1,
+          "expense": 1328554
+        },
+        {
+          "title": "Freds- och säkerhetsfrämjande verksamhet",
+          "id": 2,
+          "expense": 138287
+        },
+        {
+          "title": "Nordiskt samarbete",
+          "id": 3,
+          "expense": 13595
+        },
+        {
+          "title": "Ekonomiskt bistånd till enskilda utomlands samt diverse kostnader för rättsväsendet",
+          "id": 4,
+          "expense": 3826
+        },
+        {
+          "title": "Inspektionen för strategiska produkter",
+          "id": 5,
+          "expense": 30242
+        },
+        {
+          "title": "Forskning, utredningar och andra insatser rörande säkerhetspolitik, nedrustning och icke-spridning",
+          "id": 6,
+          "expense": 44945
+        },
+        {
+          "title": "Bidrag till Stockholms internationella fredsforskningsinstitut (SIPRI)",
+          "id": 7,
+          "expense": 24402
+        },
+        {
+          "title": "Bidrag till Utrikespolitiska institutet (UI)",
+          "id": 8,
+          "expense": 15675
+        },
+        {
+          "title": "Svenska institutet",
+          "id": 9,
+          "expense": 96346
+        },
+        {
+          "title": "Information om Sverige i utlandet",
+          "id": 10,
+          "expense": 14475
+        },
+        {
+          "title": "Samarbete inom Östersjöregionen",
+          "id": 11,
+          "expense": 188715
+        }
+      ],
+      "uo": 5
+    },
+    {
+      "total": 48588647,
+      "title": "Försvar och samhällets krisberedskap",
+      "rows": [
+        {
+          "title": "Förbandsverksamhet och beredskap",
+          "id": 1,
+          "expense": 24364329
+        },
+        {
+          "title": "Försvarsmaktens insatser internationellt",
+          "id": 2,
+          "expense": 1878835
+        },
+        {
+          "title": "Anskaffning av materiel och anläggningar",
+          "id": 3,
+          "expense": 9776522
+        },
+        {
+          "title": "Vidmakthållande, avveckling m.m. av materiel och anläggningar",
+          "id": 4,
+          "expense": 6547158
+        },
+        {
+          "title": "Forskning och teknikutveckling",
+          "id": 5,
+          "expense": 591440
+        },
+        {
+          "title": "Totalförsvarets rekryteringsmyndighet",
+          "id": 6,
+          "expense": 22808
+        },
+        {
+          "title": "Officersutbildning m.m.",
+          "id": 7,
+          "expense": 207795
+        },
+        {
+          "title": "Försvarets radioanstalt",
+          "id": 8,
+          "expense": 863999
+        },
+        {
+          "title": "Totalförsvarets forskningsinstitut",
+          "id": 9,
+          "expense": 169058
+        },
+        {
+          "title": "Nämnder m.m.",
+          "id": 10,
+          "expense": 5801
+        },
+        {
+          "title": "Internationella materielsamarbeten, industrifrågor m.m.",
+          "id": 11,
+          "expense": 63618
+        },
+        {
+          "title": "Försvarsexportmyndigheten",
+          "id": 12,
+          "expense": 65828
+        },
+        {
+          "title": "Försvarsunderrättelsedomstolen",
+          "id": 13,
+          "expense": 7815
+        },
+        {
+          "title": "Statens inspektion för försvarsunderrättelseverksamheten",
+          "id": 14,
+          "expense": 12750
+        },
+        {
+          "title": "Kustbevakningen",
+          "id": 15,
+          "expense": 1040213
+        },
+        {
+          "title": "Förebyggande åtgärder mot jordskred och andra naturolyckor",
+          "id": 16,
+          "expense": 174850
+        },
+        {
+          "title": "Ersättning för räddningstjänst m.m.",
+          "id": 17,
+          "expense": 21080
+        },
+        {
+          "title": "Krisberedskap",
+          "id": 18,
+          "expense": 1014373
+        },
+        {
+          "title": "Gemensam radiokommunikation för skydd och säkerhet",
+          "id": 19,
+          "expense": 34000
+        },
+        {
+          "title": "Ersättning till SOS Alarm Sverige AB för alarmeringstjänst enligt avtal",
+          "id": 20,
+          "expense": 224171
+        },
+        {
+          "title": "Myndigheten för samhällsskydd och beredskap",
+          "id": 21,
+          "expense": 1043555
+        },
+        {
+          "title": "Statens haverikommission",
+          "id": 22,
+          "expense": 43679
+        },
+        {
+          "title": "Strålsäkerhetsmyndigheten",
+          "id": 23,
+          "expense": 362131
+        },
+        {
+          "title": "Elsäkerhetsverket",
+          "id": 24,
+          "expense": 52839
+        }
+      ],
+      "uo": 6
+    },
+    {
+      "total": 30009056,
+      "title": "Internationellt bistånd",
+      "rows": [
+        {
+          "title": "Biståndsverksamhet",
+          "id": 1,
+          "expense": 28851579
+        },
+        {
+          "title": "Styrelsen för internationellt utvecklingssamarbete (Sida)",
+          "id": 2,
+          "expense": 988393
+        },
+        {
+          "title": "Nordiska Afrikainstitutet",
+          "id": 3,
+          "expense": 14353
+        },
+        {
+          "title": "Folke Bernadotteakademin",
+          "id": 4,
+          "expense": 99651
+        },
+        {
+          "title": "Riksrevisionen: Internationellt utvecklingssamarbete",
+          "id": 5,
+          "expense": 40000
+        },
+        {
+          "title": "Utvärdering av internationellt bistånd",
+          "id": 6,
+          "expense": 15080
+        }
+      ],
+      "uo": 7
+    },
+    {
+      "total": 17433309,
+      "title": "Migration",
+      "rows": [
+        {
+          "title": "Migrationsverket",
+          "id": 1,
+          "expense": 4539177
+        },
+        {
+          "title": "Ersättningar och bostadskostnader",
+          "id": 2,
+          "expense": 10861115
+        },
+        {
+          "title": "Migrationspolitiska åtgärder",
+          "id": 3,
+          "expense": 420077
+        },
+        {
+          "title": "Domstolsprövning i utlänningsmål",
+          "id": 4,
+          "expense": 559541
+        },
+        {
+          "title": "Rättsliga biträden m.m. vid domstolsprövning i utlänningsmål",
+          "id": 5,
+          "expense": 160800
+        },
+        {
+          "title": "Offentligt biträde i utlänningsärenden",
+          "id": 6,
+          "expense": 382150
+        },
+        {
+          "title": "Utresor för avvisade och utvisade",
+          "id": 7,
+          "expense": 305202
+        },
+        {
+          "title": "Från EU-budgeten finansierade insatser för asylsökande och flyktingar",
+          "id": 8,
+          "expense": 205247
+        }
+      ],
+      "uo": 8
+    },
+    {
+      "total": 64441159,
+      "title": "Hälsovård, sjukvård och social omsorg",
+      "rows": [
+        {
+          "title": "Myndigheten för vårdanalys",
+          "id": 1,
+          "expense": 31825
+        },
+        {
+          "title": "Statens beredning för medicinsk utvärdering",
+          "id": 2,
+          "expense": 67887
+        },
+        {
+          "title": "Tandvårds- och läkemedelsförmånsverket",
+          "id": 3,
+          "expense": 132882
+        },
+        {
+          "title": "Tandvårdsförmåner",
+          "id": 4,
+          "expense": 5785510
+        },
+        {
+          "title": "Bidrag för läkemedelsförmånerna",
+          "id": 5,
+          "expense": 21160000
+        },
+        {
+          "title": "Bidrag till folkhälsa och sjukvård",
+          "id": 6,
+          "expense": 2640704
+        },
+        {
+          "title": "Sjukvård i internationella förhållanden",
+          "id": 7,
+          "expense": 611535
+        },
+        {
+          "title": "Bidrag till psykiatri",
+          "id": 8,
+          "expense": 844893
+        },
+        {
+          "title": "Prestationsbunden vårdgaranti",
+          "id": 9,
+          "expense": 1000000
+        },
+        {
+          "title": "Bidrag för mänskliga vävnader och celler",
+          "id": 10,
+          "expense": 74000
+        },
+        {
+          "title": "Läkemedelsverket",
+          "id": 11,
+          "expense": 123190
+        },
+        {
+          "title": "E-hälsomyndigheten",
+          "id": 12,
+          "expense": 114401
+        },
+        {
+          "title": "Folkhälsomyndigheten",
+          "id": 13,
+          "expense": 371190
+        },
+        {
+          "title": "Insatser för vaccinberedskap",
+          "id": 14,
+          "expense": 85000
+        },
+        {
+          "title": "Bidrag till WHO",
+          "id": 15,
+          "expense": 34665
+        },
+        {
+          "title": "Insatser mot hiv/aids och andra smittsamma sjukdomar",
+          "id": 16,
+          "expense": 145502
+        },
+        {
+          "title": "Myndigheten för delaktighet",
+          "id": 17,
+          "expense": 53169
+        },
+        {
+          "title": "Bidrag till handikapporganisationer",
+          "id": 18,
+          "expense": 182742
+        },
+        {
+          "title": "Personligt ombud",
+          "id": 19,
+          "expense": 104460
+        },
+        {
+          "title": "Vissa statsbidrag inom funktionshindersområdet",
+          "id": 20,
+          "expense": 322554
+        },
+        {
+          "title": "Bilstöd till personer med funktionsnedsättning",
+          "id": 21,
+          "expense": 266995
+        },
+        {
+          "title": "Kostnader för statlig assistansersättning",
+          "id": 22,
+          "expense": 24421000
+        },
+        {
+          "title": "Stimulansbidrag och åtgärder inom äldrepolitiken",
+          "id": 23,
+          "expense": 2413180
+        },
+        {
+          "title": "Statens institutionsstyrelse",
+          "id": 24,
+          "expense": 881816
+        },
+        {
+          "title": "Bidrag till utveckling av socialt arbete m.m.",
+          "id": 25,
+          "expense": 376215
+        },
+        {
+          "title": "Ersättning för vanvård i den sociala barn- och ungdomsvården",
+          "id": 26,
+          "expense": 180000
+        },
+        {
+          "title": "Ersättningsnämnden",
+          "id": 27,
+          "expense": 39315
+        },
+        {
+          "title": "Myndigheten för internationella adoptionsfrågor",
+          "id": 28,
+          "expense": 15238
+        },
+        {
+          "title": "Barnombudsmannen",
+          "id": 29,
+          "expense": 23910
+        },
+        {
+          "title": "Insatser för att förverkliga konventionen om barnets rättigheter i Sverige",
+          "id": 30,
+          "expense": 33761
+        },
+        {
+          "title": "Alkoholsortimentsnämnden",
+          "id": 31,
+          "expense": 234
+        },
+        {
+          "title": "Åtgärder avseende alkohol, narkotika, dopning, tobak, samt spel",
+          "id": 32,
+          "expense": 258629
+        },
+        {
+          "title": "Forskningsrådet för hälsa, arbetsliv och välfärd: Förvaltning",
+          "id": 33,
+          "expense": 28735
+        },
+        {
+          "title": "Forskningsrådet för hälsa, arbetsliv och välfärd: Forskning",
+          "id": 34,
+          "expense": 511374
+        },
+        {
+          "title": "Socialstyrelsen",
+          "id": 35,
+          "expense": 470583
+        },
+        {
+          "title": "Inspektionen för vård och omsorg",
+          "id": 36,
+          "expense": 634065
+        }
+      ],
+      "uo": 9
+    },
+    {
+      "total": 101016487,
+      "title": "Ekonomisk trygghet vid sjukdom och funktionsnedsättning",
+      "rows": [
+        {
+          "title": "Sjukpenning och rehabilitering m.m.",
+          "id": 1,
+          "expense": 34856700
+        },
+        {
+          "title": "Aktivitets- och sjukersättningar m.m.",
+          "id": 2,
+          "expense": 50326629
+        },
+        {
+          "title": "Handikappersättningar",
+          "id": 3,
+          "expense": 1351000
+        },
+        {
+          "title": "Arbetsskadeersättningar m.m.",
+          "id": 4,
+          "expense": 3358000
+        },
+        {
+          "title": "Ersättning inom det statliga personskadeskyddet",
+          "id": 5,
+          "expense": 38244
+        },
+        {
+          "title": "Bidrag för sjukskrivningsprocessen",
+          "id": 6,
+          "expense": 3142000
+        },
+        {
+          "title": "Försäkringskassan",
+          "id": 7,
+          "expense": 7879695
+        },
+        {
+          "title": "Inspektionen för socialförsäkringen",
+          "id": 8,
+          "expense": 64219
+        }
+      ],
+      "uo": 10
+    },
+    {
+      "total": 38166036,
+      "title": "Ekonomisk trygghet vid ålderdom",
+      "rows": [
+        {
+          "title": "Garantipension till ålderspension",
+          "id": 1,
+          "expense": 15878500
+        },
+        {
+          "title": "Efterlevandepensioner till vuxna",
+          "id": 2,
+          "expense": 12459900
+        },
+        {
+          "title": "Bostadstillägg till pensionärer",
+          "id": 3,
+          "expense": 8488100
+        },
+        {
+          "title": "Äldreförsörjningsstöd",
+          "id": 4,
+          "expense": 805100
+        },
+        {
+          "title": "Pensionsmyndigheten",
+          "id": 5,
+          "expense": 534436
+        }
+      ],
+      "uo": 11
+    },
+    {
+      "total": 83908698,
+      "title": "Ekonomisk trygghet för familjer och barn",
+      "rows": [
+        {
+          "title": "Barnbidrag",
+          "id": 1,
+          "expense": 25839595
+        },
+        {
+          "title": "Föräldraförsäkring",
+          "id": 2,
+          "expense": 39162861
+        },
+        {
+          "title": "Underhållsstöd",
+          "id": 3,
+          "expense": 2689000
+        },
+        {
+          "title": "Adoptionsbidrag",
+          "id": 4,
+          "expense": 35784
+        },
+        {
+          "title": "Barnpension och efterlevandestöd",
+          "id": 5,
+          "expense": 904600
+        },
+        {
+          "title": "Vårdbidrag för funktionshindrade barn",
+          "id": 6,
+          "expense": 3409300
+        },
+        {
+          "title": "Pensionsrätt för barnår",
+          "id": 7,
+          "expense": 6875558
+        },
+        {
+          "title": "Bostadsbidrag",
+          "id": 8,
+          "expense": 4992000
+        }
+      ],
+      "uo": 12
+    },
+    {
+      "total": 16807043,
+      "title": "Integration och jämställdhet",
+      "rows": [
+        {
+          "title": "Integrationsåtgärder",
+          "id": 1,
+          "expense": 33930
+        },
+        {
+          "title": "Kommunersättningar vid flyktingmottagande",
+          "id": 2,
+          "expense": 9450532
+        },
+        {
+          "title": "Etableringsersättning till vissa nyanlända invandrare",
+          "id": 3,
+          "expense": 4029000
+        },
+        {
+          "title": "Ersättning till etableringslotsar och insatser för vissa nyanlända invandrare",
+          "id": 4,
+          "expense": 2710000
+        },
+        {
+          "title": "Hemutrustningslån",
+          "id": 5,
+          "expense": 217469
+        },
+        {
+          "title": "Från EU-budgeten finansierade insatser för integration av tredjelandsmedborgare",
+          "id": 6,
+          "expense": 22300
+        },
+        {
+          "title": "Diskrimineringsombudsmannen",
+          "id": 7,
+          "expense": 97665
+        },
+        {
+          "title": "Åtgärder mot diskriminering och rasism m.m.",
+          "id": 8,
+          "expense": 38608
+        },
+        {
+          "title": "Särskilda jämställdhetsåtgärder",
+          "id": 9,
+          "expense": 207539
+        }
+      ],
+      "uo": 13
+    },
+    {
+      "total": 71846204,
+      "title": "Arbetsmarknad och arbetsliv",
+      "rows": [
+        {
+          "title": "Arbetsförmedlingens förvaltningskostnader",
+          "id": 1,
+          "expense": 7649024
+        },
+        {
+          "title": "Bidrag till arbetslöshetsersättning och aktivitetsstöd",
+          "id": 2,
+          "expense": 31583504
+        },
+        {
+          "title": "Kostnader för arbetsmarknadspolitiska program och insatser",
+          "id": 3,
+          "expense": 11476880
+        },
+        {
+          "title": "Lönebidrag och Samhall m.m.",
+          "id": 4,
+          "expense": 17742136
+        },
+        {
+          "title": "Rådet för Europeiska socialfonden i Sverige",
+          "id": 5,
+          "expense": 115064
+        },
+        {
+          "title": "Europeiska socialfonden m.m. för perioden 2014-2020",
+          "id": 6,
+          "expense": 336000
+        },
+        {
+          "title": "Institutet för arbetsmarknads- och utbildningspolitisk utvärdering",
+          "id": 7,
+          "expense": 38850
+        },
+        {
+          "title": "Inspektionen för arbetslöshetsförsäkringen",
+          "id": 8,
+          "expense": 63418
+        },
+        {
+          "title": "Bidrag till administration av grundbeloppet",
+          "id": 9,
+          "expense": 54490
+        },
+        {
+          "title": "Bidrag till Stiftelsen Utbildning Nordkalotten",
+          "id": 10,
+          "expense": 8303
+        },
+        {
+          "title": "Bidrag till lönegarantiersättning",
+          "id": 11,
+          "expense": 1775000
+        },
+        {
+          "title": "Europeiska socialfonden m.m. för perioden 2007-2013",
+          "id": 12,
+          "expense": 159800
+        },
+        {
+          "title": "Arbetsmiljöverket",
+          "id": 13,
+          "expense": 709952
+        },
+        {
+          "title": "Arbetsdomstolen",
+          "id": 14,
+          "expense": 31683
+        },
+        {
+          "title": "Internationella arbetsorganisationen (ILO)",
+          "id": 15,
+          "expense": 32222
+        },
+        {
+          "title": "Medlingsinstitutet",
+          "id": 16,
+          "expense": 57878
+        },
+        {
+          "title": "Arbetslivspolitik",
+          "id": 17,
+          "expense": 12000
+        }
+      ],
+      "uo": 14
+    },
+    {
+      "total": 21177307,
+      "title": "Studiestöd",
+      "rows": [
+        {
+          "title": "Studiehjälp",
+          "id": 1,
+          "expense": 3313725
+        },
+        {
+          "title": "Studiemedel",
+          "id": 2,
+          "expense": 14880700
+        },
+        {
+          "title": "Avsättning för kreditförluster",
+          "id": 3,
+          "expense": 1809739
+        },
+        {
+          "title": "Statens utgifter för studiemedelsräntor",
+          "id": 4,
+          "expense": 888067
+        },
+        {
+          "title": "Bidrag till kostnader vid viss gymnasieutbildning och vid viss föräldrautbildning i teckenspråk",
+          "id": 5,
+          "expense": 61150
+        },
+        {
+          "title": "Bidrag till vissa studiesociala ändamål",
+          "id": 6,
+          "expense": 27000
+        },
+        {
+          "title": "Centrala studiestödsnämnden",
+          "id": 7,
+          "expense": 183164
+        },
+        {
+          "title": "Överklagandenämnden för studiestöd",
+          "id": 8,
+          "expense": 13762
+        }
+      ],
+      "uo": 15
+    },
+    {
+      "total": 64152606,
+      "title": "Utbildning och universitetsforskning",
+      "rows": [
+        {
+          "title": "Statens skolverk",
+          "id": 1,
+          "expense": 472352
+        },
+        {
+          "title": "Statens skolinspektion",
+          "id": 2,
+          "expense": 383665
+        },
+        {
+          "title": "Specialpedagogiska skolmyndigheten",
+          "id": 3,
+          "expense": 692932
+        },
+        {
+          "title": "Sameskolstyrelsen",
+          "id": 4,
+          "expense": 33984
+        },
+        {
+          "title": "Utveckling av skolväsendet och annan pedagogisk verksamhet",
+          "id": 5,
+          "expense": 4393285
+        },
+        {
+          "title": "Särskilda insatser inom skolområdet",
+          "id": 6,
+          "expense": 468358
+        },
+        {
+          "title": "Maxtaxa i förskola, fritidshem och annan pedagogisk verksamhet, m.m.",
+          "id": 7,
+          "expense": 4103500
+        },
+        {
+          "title": "Bidrag till viss verksamhet inom skolväsendet, m.m.",
+          "id": 8,
+          "expense": 181409
+        },
+        {
+          "title": "Bidrag till svensk undervisning i utlandet",
+          "id": 9,
+          "expense": 92412
+        },
+        {
+          "title": "Fortbildning av lärare och förskolepersonal",
+          "id": 10,
+          "expense": 482226
+        },
+        {
+          "title": "Bidrag till vissa studier",
+          "id": 11,
+          "expense": 19525
+        },
+        {
+          "title": "Myndigheten för yrkeshögskolan",
+          "id": 12,
+          "expense": 102257
+        },
+        {
+          "title": "Statligt stöd till vuxenutbildning",
+          "id": 13,
+          "expense": 2876654
+        },
+        {
+          "title": "Särskilt utbildningsstöd",
+          "id": 14,
+          "expense": 154910
+        },
+        {
+          "title": "Fler anställda i lågstadiet",
+          "id": 15,
+          "expense": 1108000
+        },
+        {
+          "title": "Skolforskningsinstitutet",
+          "id": 16,
+          "expense": 30000
+        },
+        {
+          "title": "Universitetskanslersämbetet",
+          "id": 17,
+          "expense": 136297
+        },
+        {
+          "title": "Universitets- och högskolerådet",
+          "id": 18,
+          "expense": 114889
+        },
+        {
+          "title": "Uppsala universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 19,
+          "expense": 1527870
+        },
+        {
+          "title": "Uppsala universitet: Forskning och utbildning på forskarnivå",
+          "id": 20,
+          "expense": 1983169
+        },
+        {
+          "title": "Lunds universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 21,
+          "expense": 1843306
+        },
+        {
+          "title": "Lunds universitet: Forskning och utbildning på forskarnivå",
+          "id": 22,
+          "expense": 2040269
+        },
+        {
+          "title": "Göteborgs universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 23,
+          "expense": 1877171
+        },
+        {
+          "title": "Göteborgs universitet: Forskning och utbildning på forskarnivå",
+          "id": 24,
+          "expense": 1462769
+        },
+        {
+          "title": "Stockholms universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 25,
+          "expense": 1563553
+        },
+        {
+          "title": "Stockholms universitet: Forskning och utbildning på forskarnivå",
+          "id": 26,
+          "expense": 1530909
+        },
+        {
+          "title": "Umeå universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 27,
+          "expense": 1233503
+        },
+        {
+          "title": "Umeå universitet: Forskning och utbildning på forskarnivå",
+          "id": 28,
+          "expense": 1042268
+        },
+        {
+          "title": "Linköpings universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 29,
+          "expense": 1361677
+        },
+        {
+          "title": "Linköpings universitet: Forskning och utbildning på forskarnivå",
+          "id": 30,
+          "expense": 805915
+        },
+        {
+          "title": "Karolinska institutet: Utbildning på grundnivå och avancerad nivå",
+          "id": 31,
+          "expense": 639133
+        },
+        {
+          "title": "Karolinska institutet: Forskning och utbildning på forskarnivå",
+          "id": 32,
+          "expense": 1470252
+        },
+        {
+          "title": "Kungl. Tekniska högskolan: Utbildning på grundnivå och avancerad nivå",
+          "id": 33,
+          "expense": 1051529
+        },
+        {
+          "title": "Kungl. Tekniska högskolan: Forskning och utbildning på forskarnivå",
+          "id": 34,
+          "expense": 1380190
+        },
+        {
+          "title": "Luleå tekniska universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 35,
+          "expense": 616592
+        },
+        {
+          "title": "Luleå tekniska universitet: Forskning och utbildning på forskarnivå",
+          "id": 36,
+          "expense": 355251
+        },
+        {
+          "title": "Karlstads universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 37,
+          "expense": 581512
+        },
+        {
+          "title": "Karlstads universitet: Forskning och utbildning på forskarnivå",
+          "id": 38,
+          "expense": 202405
+        },
+        {
+          "title": "Linnéuniversitetet: Utbildning på grundnivå och avancerad nivå",
+          "id": 39,
+          "expense": 980054
+        },
+        {
+          "title": "Linnéuniversitetet: Forskning och utbildning på forskarnivå",
+          "id": 40,
+          "expense": 285922
+        },
+        {
+          "title": "Örebro universitet: Utbildning på grundnivå och avancerad nivå",
+          "id": 41,
+          "expense": 696534
+        },
+        {
+          "title": "Örebro universitet: Forskning och utbildning på forskarnivå",
+          "id": 42,
+          "expense": 224570
+        },
+        {
+          "title": "Mittuniversitetet: Utbildning på grundnivå och avancerad nivå",
+          "id": 43,
+          "expense": 511131
+        },
+        {
+          "title": "Mittuniversitetet: Forskning och utbildning på forskarnivå",
+          "id": 44,
+          "expense": 208650
+        },
+        {
+          "title": "Blekinge tekniska högskola: Utbildning på grundnivå och avancerad nivå",
+          "id": 45,
+          "expense": 258648
+        },
+        {
+          "title": "Blekinge tekniska högskola: Forskning och utbildning på forskarnivå",
+          "id": 46,
+          "expense": 86165
+        },
+        {
+          "title": "Malmö högskola: Utbildning på grundnivå och avancerad nivå",
+          "id": 47,
+          "expense": 811708
+        },
+        {
+          "title": "Malmö högskola: Forskning och utbildning på forskarnivå",
+          "id": 48,
+          "expense": 110870
+        },
+        {
+          "title": "Mälardalens högskola: Utbildning på grundnivå och avancerad nivå",
+          "id": 49,
+          "expense": 563812
+        },
+        {
+          "title": "Mälardalens högskola: Forskning och utbildning på forskarnivå",
+          "id": 50,
+          "expense": 84561
+        },
+        {
+          "title": "Stockholms konstnärliga högskola: Utbildning på grundnivå och avancerad nivå",
+          "id": 51,
+          "expense": 191622
+        },
+        {
+          "title": "Stockholms konstnärliga högskola: Konstnärlig forskning och utbildning på forskarnivå",
+          "id": 52,
+          "expense": 48091
+        },
+        {
+          "title": "Gymnastik- och idrottshögskolan: Utbildning på grundnivå och avancerad nivå",
+          "id": 53,
+          "expense": 89178
+        },
+        {
+          "title": "Gymnastik- och idrottshögskolan: Forskning och utbildning på forskarnivå",
+          "id": 54,
+          "expense": 26054
+        },
+        {
+          "title": "Högskolan i Borås: Utbildning på grundnivå och avancerad nivå",
+          "id": 55,
+          "expense": 437059
+        },
+        {
+          "title": "Högskolan i Borås: Forskning och utbildning på forskarnivå",
+          "id": 56,
+          "expense": 57626
+        },
+        {
+          "title": "Högskolan Dalarna: Utbildning på grundnivå och avancerad nivå",
+          "id": 57,
+          "expense": 387117
+        },
+        {
+          "title": "Högskolan Dalarna: Forskning och utbildning på forskarnivå",
+          "id": 58,
+          "expense": 55972
+        },
+        {
+          "title": "Högskolan i Gävle: Utbildning på grundnivå och avancerad nivå",
+          "id": 59,
+          "expense": 411850
+        },
+        {
+          "title": "Högskolan i Gävle: Forskning och utbildning på forskarnivå",
+          "id": 60,
+          "expense": 85239
+        },
+        {
+          "title": "Högskolan i Halmstad: Utbildning på grundnivå och avancerad nivå",
+          "id": 61,
+          "expense": 358336
+        },
+        {
+          "title": "Högskolan i Halmstad: Forskning och utbildning på forskarnivå",
+          "id": 62,
+          "expense": 56601
+        },
+        {
+          "title": "Högskolan Kristianstad: Utbildning på grundnivå och avancerad nivå",
+          "id": 63,
+          "expense": 345318
+        },
+        {
+          "title": "Högskolan Kristianstad: Forskning och utbildning på forskarnivå",
+          "id": 64,
+          "expense": 47412
+        },
+        {
+          "title": "Högskolan i Skövde: Utbildning på grundnivå och avancerad nivå",
+          "id": 65,
+          "expense": 303826
+        },
+        {
+          "title": "Högskolan i Skövde: Forskning och utbildning på forskarnivå",
+          "id": 66,
+          "expense": 41540
+        },
+        {
+          "title": "Högskolan Väst: Utbildning på grundnivå och avancerad nivå",
+          "id": 67,
+          "expense": 331231
+        },
+        {
+          "title": "Högskolan Väst: Forskning och utbildning på forskarnivå",
+          "id": 68,
+          "expense": 41080
+        },
+        {
+          "title": "Konstfack: Utbildning på grundnivå och avancerad nivå",
+          "id": 69,
+          "expense": 152966
+        },
+        {
+          "title": "Konstfack: Konstnärlig forskning och utbildning på forskarnivå",
+          "id": 70,
+          "expense": 8259
+        },
+        {
+          "title": "Kungl. Konsthögskolan: Utbildning på grundnivå och avancerad nivå",
+          "id": 71,
+          "expense": 60852
+        },
+        {
+          "title": "Kungl. Konsthögskolan: Konstnärlig forskning och utbildning på forskarnivå",
+          "id": 72,
+          "expense": 4944
+        },
+        {
+          "title": "Kungl. Musikhögskolan i Stockholm: Utbildning på grundnivå och avancerad nivå",
+          "id": 73,
+          "expense": 122384
+        },
+        {
+          "title": "Kungl. Musikhögskolan i Stockholm: Konstnärlig forskning och utbildning på forskarnivå",
+          "id": 74,
+          "expense": 8352
+        },
+        {
+          "title": "Södertörns högskola: Utbildning på grundnivå och avancerad nivå",
+          "id": 75,
+          "expense": 370215
+        },
+        {
+          "title": "Södertörns högskola: Forskning och utbildning på forskarnivå",
+          "id": 76,
+          "expense": 52911
+        },
+        {
+          "title": "Försvarshögskolan: Utbildning på grundnivå och avancerad nivå",
+          "id": 77,
+          "expense": 23731
+        },
+        {
+          "title": "Försvarshögskolan: Forskning och utbildning på forskarnivå",
+          "id": 78,
+          "expense": 9295
+        },
+        {
+          "title": "Enskilda utbildningsanordnare på högskoleområdet",
+          "id": 79,
+          "expense": 2918272
+        },
+        {
+          "title": "Särskilda utgifter inom universitet och högskolor",
+          "id": 80,
+          "expense": 890511
+        },
+        {
+          "title": "Särskilda medel till universitet och högskolor",
+          "id": 81,
+          "expense": 800380
+        },
+        {
+          "title": "Ersättningar för klinisk utbildning och forskning",
+          "id": 82,
+          "expense": 2397080
+        },
+        {
+          "title": "Vetenskapsrådet: Forskning och forskningsinformation",
+          "id": 83,
+          "expense": 5622028
+        },
+        {
+          "title": "Vetenskapsrådet: Avgifter till internationella organisationer",
+          "id": 84,
+          "expense": 280061
+        },
+        {
+          "title": "Vetenskapsrådet: Förvaltning",
+          "id": 85,
+          "expense": 134403
+        },
+        {
+          "title": "Rymdforskning och rymdverksamhet",
+          "id": 86,
+          "expense": 349950
+        },
+        {
+          "title": "Rymdstyrelsen: Förvaltning",
+          "id": 87,
+          "expense": 26780
+        },
+        {
+          "title": "Rymdstyrelsen: Avgifter till internationella organisationer",
+          "id": 88,
+          "expense": 551309
+        },
+        {
+          "title": "Institutet för rymdfysik",
+          "id": 89,
+          "expense": 51410
+        },
+        {
+          "title": "Kungl. biblioteket",
+          "id": 90,
+          "expense": 347962
+        },
+        {
+          "title": "Polarforskningssekretariatet",
+          "id": 91,
+          "expense": 38765
+        },
+        {
+          "title": "Sunet",
+          "id": 92,
+          "expense": 43742
+        },
+        {
+          "title": "Centrala etikprövningsnämnden",
+          "id": 93,
+          "expense": 9234
+        },
+        {
+          "title": "Regionala etikprövningsnämnder",
+          "id": 94,
+          "expense": 40569
+        },
+        {
+          "title": "Särskilda utgifter för forskningsändamål",
+          "id": 95,
+          "expense": 152572
+        },
+        {
+          "title": "Internationella program",
+          "id": 96,
+          "expense": 81589
+        },
+        {
+          "title": "Avgift till Unesco och ICCROM",
+          "id": 97,
+          "expense": 30886
+        },
+        {
+          "title": "Kostnader för Svenska Unescorådet",
+          "id": 98,
+          "expense": 9181
+        },
+        {
+          "title": "Utvecklingsarbete inom områdena utbildning och forskning",
+          "id": 99,
+          "expense": 8338
+        }
+      ],
+      "uo": 16
+    },
+    {
+      "total": 13150941,
+      "title": "Kultur, medier, trossamfund och fritid",
+      "rows": [
+        {
+          "title": "Statens kulturråd",
+          "id": 1,
+          "expense": 42559
+        },
+        {
+          "title": "Bidrag till allmän kulturverksamhet, utveckling samt internationellt kulturutbyte och samarbete",
+          "id": 2,
+          "expense": 382488
+        },
+        {
+          "title": "Skapande skola",
+          "id": 3,
+          "expense": 198571
+        },
+        {
+          "title": "Forsknings- och utvecklingsinsatser inom kulturområdet",
+          "id": 4,
+          "expense": 37979
+        },
+        {
+          "title": "Stöd till icke-statliga kulturlokaler",
+          "id": 5,
+          "expense": 9875
+        },
+        {
+          "title": "Bidrag till regional kulturverksamhet",
+          "id": 6,
+          "expense": 1293948
+        },
+        {
+          "title": "Myndigheten för kulturanalys",
+          "id": 7,
+          "expense": 15439
+        },
+        {
+          "title": "Bidrag till Operan, Dramaten, Riksteatern, Dansens Hus, Drottningholms slottsteater och Voksenåsen",
+          "id": 8,
+          "expense": 983660
+        },
+        {
+          "title": "Bidrag till vissa teater-, dans- och musikändamål",
+          "id": 9,
+          "expense": 191064
+        },
+        {
+          "title": "Statens musikverk",
+          "id": 10,
+          "expense": 110516
+        },
+        {
+          "title": "Bidrag till litteratur och kulturtidskrifter",
+          "id": 11,
+          "expense": 138060
+        },
+        {
+          "title": "Myndigheten för tillgängliga medier",
+          "id": 12,
+          "expense": 108189
+        },
+        {
+          "title": "Institutet för språk och folkminnen",
+          "id": 13,
+          "expense": 57993
+        },
+        {
+          "title": "Statens konstråd",
+          "id": 14,
+          "expense": 8130
+        },
+        {
+          "title": "Konstnärlig gestaltning av den gemensamma miljön",
+          "id": 15,
+          "expense": 33025
+        },
+        {
+          "title": "Nämnden för hemslöjdsfrågor",
+          "id": 16,
+          "expense": 11463
+        },
+        {
+          "title": "Bidrag till bild- och formområdet",
+          "id": 17,
+          "expense": 28135
+        },
+        {
+          "title": "Konstnärsnämnden",
+          "id": 18,
+          "expense": 18871
+        },
+        {
+          "title": "Ersättningar och bidrag till konstnärer",
+          "id": 19,
+          "expense": 345601
+        },
+        {
+          "title": "Riksarkivet",
+          "id": 20,
+          "expense": 370001
+        },
+        {
+          "title": "Riksantikvarieämbetet",
+          "id": 21,
+          "expense": 215822
+        },
+        {
+          "title": "Bidrag till kulturmiljövård",
+          "id": 22,
+          "expense": 251133
+        },
+        {
+          "title": "Kyrkoantikvarisk ersättning",
+          "id": 23,
+          "expense": 460000
+        },
+        {
+          "title": "Centrala museer: Myndigheter",
+          "id": 24,
+          "expense": 1090957
+        },
+        {
+          "title": "Centrala museer: Stiftelser",
+          "id": 25,
+          "expense": 245877
+        },
+        {
+          "title": "Bidrag till vissa museer",
+          "id": 26,
+          "expense": 48617
+        },
+        {
+          "title": "Riksutställningar",
+          "id": 27,
+          "expense": 43261
+        },
+        {
+          "title": "Forum för levande historia",
+          "id": 28,
+          "expense": 54416
+        },
+        {
+          "title": "Statliga utställningsgarantier och inköp av vissa kulturföremål",
+          "id": 29,
+          "expense": 80
+        },
+        {
+          "title": "Nämnden för statligt stöd till trossamfund",
+          "id": 30,
+          "expense": 8242
+        },
+        {
+          "title": "Stöd till trossamfund",
+          "id": 31,
+          "expense": 71092
+        },
+        {
+          "title": "Filmstöd",
+          "id": 32,
+          "expense": 309644
+        },
+        {
+          "title": "Utbyte av TV-sändningar mellan Sverige och Finland",
+          "id": 33,
+          "expense": 21774
+        },
+        {
+          "title": "Forskning och dokumentation om medieutvecklingen",
+          "id": 34,
+          "expense": 2648
+        },
+        {
+          "title": "Avgift till europeiska audiovisuella observatoriet",
+          "id": 35,
+          "expense": 383
+        },
+        {
+          "title": "Statens medieråd",
+          "id": 36,
+          "expense": 17101
+        },
+        {
+          "title": "Stöd till taltidningar",
+          "id": 37,
+          "expense": 60056
+        },
+        {
+          "title": "Myndigheten för ungdoms- och civilsamhällesfrågor",
+          "id": 38,
+          "expense": 33336
+        },
+        {
+          "title": "Bidrag till nationell och internationell ungdomsverksamhet",
+          "id": 39,
+          "expense": 260440
+        },
+        {
+          "title": "Stöd till idrotten",
+          "id": 40,
+          "expense": 1705751
+        },
+        {
+          "title": "Bidrag till allmänna samlingslokaler",
+          "id": 41,
+          "expense": 32164
+        },
+        {
+          "title": "Bidrag för kvinnors organisering",
+          "id": 42,
+          "expense": 28163
+        },
+        {
+          "title": "Stöd till friluftsorganisationer",
+          "id": 43,
+          "expense": 27785
+        },
+        {
+          "title": "Bidrag till riksdagspartiers kvinnoorganisationer",
+          "id": 44,
+          "expense": 15000
+        },
+        {
+          "title": "Insatser för den ideella sektorn",
+          "id": 45,
+          "expense": 24758
+        },
+        {
+          "title": "Bidrag till folkbildningen",
+          "id": 46,
+          "expense": 3671432
+        },
+        {
+          "title": "Bidrag till kontakttolkutbildning",
+          "id": 47,
+          "expense": 16769
+        },
+        {
+          "title": "Lotteriinspektionen",
+          "id": 48,
+          "expense": 48673
+        }
+      ],
+      "uo": 17
+    },
+    {
+      "total": 1508973,
+      "title": "Samhällsplanering, bostadsförsörjning och byggande samt konsumentpolitik",
+      "rows": [
+        {
+          "title": "Bostadspolitisk utveckling",
+          "id": 1,
+          "expense": 17000
+        },
+        {
+          "title": "Omstrukturering av kommunala bostadsföretag",
+          "id": 2,
+          "expense": 99500
+        },
+        {
+          "title": "Stöd för att underlätta för enskilda att ordna bostad",
+          "id": 3,
+          "expense": 43000
+        },
+        {
+          "title": "Innovativt byggande",
+          "id": 4,
+          "expense": 20000
+        },
+        {
+          "title": "Boverket",
+          "id": 5,
+          "expense": 224948
+        },
+        {
+          "title": "Bidrag till åtgärder mot radon i bostäder",
+          "id": 6,
+          "expense": 12000
+        },
+        {
+          "title": "Statens geotekniska institut",
+          "id": 7,
+          "expense": 44532
+        },
+        {
+          "title": "Lantmäteriet",
+          "id": 8,
+          "expense": 503699
+        },
+        {
+          "title": "Statens va-nämnd",
+          "id": 9,
+          "expense": 9025
+        },
+        {
+          "title": "Stöd gällande utveckling i strandnära lägen",
+          "id": 10,
+          "expense": 2000
+        },
+        {
+          "title": "Utvecklingsprojekt för jämställda offentliga rum",
+          "id": 11,
+          "expense": 16000
+        },
+        {
+          "title": "Energieffektivisering av vissa bostäder",
+          "id": 12,
+          "expense": 200000
+        },
+        {
+          "title": "Upprustning av skollokaler",
+          "id": 13,
+          "expense": 100000
+        },
+        {
+          "title": "Marknadsdomstolen",
+          "id": 14,
+          "expense": 10979
+        },
+        {
+          "title": "Konsumentverket",
+          "id": 15,
+          "expense": 135208
+        },
+        {
+          "title": "Allmänna reklamationsnämnden",
+          "id": 16,
+          "expense": 35524
+        },
+        {
+          "title": "Fastighetsmäklarinspektionen",
+          "id": 17,
+          "expense": 16725
+        },
+        {
+          "title": "Åtgärder på konsumentområdet",
+          "id": 18,
+          "expense": 15459
+        },
+        {
+          "title": "Bidrag till miljömärkning av produkter",
+          "id": 19,
+          "expense": 3374
+        }
+      ],
+      "uo": 18
+    },
+    {
+      "total": 2700801,
+      "title": "Regional tillväxt",
+      "rows": [
+        {
+          "title": "Regionala tillväxtåtgärder",
+          "id": 1,
+          "expense": 1469637
+        },
+        {
+          "title": "Transportbidrag",
+          "id": 2,
+          "expense": 400864
+        },
+        {
+          "title": "Europeiska regionala utvecklingsfonden perioden 2007-2013",
+          "id": 3,
+          "expense": 589300
+        },
+        {
+          "title": "Europeiska regionala utvecklingsfonden perioden 2014-2020",
+          "id": 4,
+          "expense": 241000
+        }
+      ],
+      "uo": 19
+    },
+    {
+      "total": 6881418,
+      "title": "Allmän miljö- och naturvård",
+      "rows": [
+        {
+          "title": "Naturvårdsverket",
+          "id": 1,
+          "expense": 413559
+        },
+        {
+          "title": "Miljöövervakning m.m.",
+          "id": 2,
+          "expense": 356214
+        },
+        {
+          "title": "Åtgärder för värdefull natur",
+          "id": 3,
+          "expense": 999535
+        },
+        {
+          "title": "Sanering och återställning av förorenade områden",
+          "id": 4,
+          "expense": 603018
+        },
+        {
+          "title": "Miljöforskning",
+          "id": 5,
+          "expense": 75990
+        },
+        {
+          "title": "Kemikalieinspektionen",
+          "id": 6,
+          "expense": 209052
+        },
+        {
+          "title": "Avgifter till Internationella organisationer",
+          "id": 7,
+          "expense": 183131
+        },
+        {
+          "title": "Supermiljöbilspremie",
+          "id": 8,
+          "expense": 100000
+        },
+        {
+          "title": "Sveriges meteorologiska och hydrologiska institut",
+          "id": 9,
+          "expense": 219104
+        },
+        {
+          "title": "Klimatanpassning",
+          "id": 10,
+          "expense": 165000
+        },
+        {
+          "title": "Inspire",
+          "id": 11,
+          "expense": 20000
+        },
+        {
+          "title": "Åtgärder för havs- och vattenmiljö",
+          "id": 12,
+          "expense": 741565
+        },
+        {
+          "title": "Insatser för internationella klimatinvesteringar",
+          "id": 13,
+          "expense": 183000
+        },
+        {
+          "title": "Internationellt miljösamarbete",
+          "id": 14,
+          "expense": 33900
+        },
+        {
+          "title": "Hållbara städer",
+          "id": 15,
+          "expense": 80000
+        },
+        {
+          "title": "Skydd av värdefull natur",
+          "id": 16,
+          "expense": 1375000
+        },
+        {
+          "title": "Havs- och vattenmyndigheten",
+          "id": 17,
+          "expense": 227974
+        },
+        {
+          "title": "Klimatinvesteringar i kommuner och regioner",
+          "id": 18,
+          "expense": 200000
+        },
+        {
+          "title": "Forskningsrådet för miljö, areella näringar och samhällsbyggande: Förvaltningskostnader",
+          "id": 19,
+          "expense": 55513
+        },
+        {
+          "title": "Forskningsrådet för miljö, areella näringar och samhällsbyggande: Forskning",
+          "id": 20,
+          "expense": 639863
+        }
+      ],
+      "uo": 20
+    },
+    {
+      "total": 2495609,
+      "title": "Energi",
+      "rows": [
+        {
+          "title": "Statens energimyndighet",
+          "id": 1,
+          "expense": 250028
+        },
+        {
+          "title": "Insatser för energieffektivisering",
+          "id": 2,
+          "expense": 248000
+        },
+        {
+          "title": "Stöd för marknadsintroduktion av vindkraft",
+          "id": 3,
+          "expense": 10000
+        },
+        {
+          "title": "Energiforskning",
+          "id": 4,
+          "expense": 1212536
+        },
+        {
+          "title": "Ersättning för vissa kostnader vid avveckling av Barsebäcksverket",
+          "id": 5,
+          "expense": 138600
+        },
+        {
+          "title": "Planeringsstöd för vindkraft",
+          "id": 6,
+          "expense": 15000
+        },
+        {
+          "title": "Energimarknadsinspektionen",
+          "id": 7,
+          "expense": 105117
+        },
+        {
+          "title": "Energiteknik",
+          "id": 8,
+          "expense": 240000
+        },
+        {
+          "title": "Elberedskap",
+          "id": 9,
+          "expense": 255000
+        },
+        {
+          "title": "Avgifter till internationella organisationer",
+          "id": 10,
+          "expense": 21328
+        }
+      ],
+      "uo": 21
+    },
+    {
+      "total": 50078203,
+      "title": "Kommunikationer",
+      "rows": [
+        {
+          "title": "Utveckling av statens transportinfrastruktur",
+          "id": 1,
+          "expense": 21718542
+        },
+        {
+          "title": "Vidmakthållande av statens transportinfrastruktur",
+          "id": 2,
+          "expense": 20821798
+        },
+        {
+          "title": "Trafikverket",
+          "id": 3,
+          "expense": 1283636
+        },
+        {
+          "title": "Ersättning för sjöräddning och fritidsbåtsändamål",
+          "id": 4,
+          "expense": 388308
+        },
+        {
+          "title": "Ersättning för viss kanal- och slussinfrastruktur",
+          "id": 5,
+          "expense": 162284
+        },
+        {
+          "title": "Driftbidrag till icke statliga flygplatser",
+          "id": 6,
+          "expense": 80013
+        },
+        {
+          "title": "Trafikavtal",
+          "id": 7,
+          "expense": 831000
+        },
+        {
+          "title": "Viss internationell verksamhet",
+          "id": 8,
+          "expense": 25155
+        },
+        {
+          "title": "Statens väg- och transportforskningsinstitut",
+          "id": 9,
+          "expense": 46525
+        },
+        {
+          "title": "Från EU-budgeten finansierade stöd till Transeuropeiska nätverk",
+          "id": 10,
+          "expense": 348500
+        },
+        {
+          "title": "Trängselskatt i Stockholm",
+          "id": 11,
+          "expense": 1005058
+        },
+        {
+          "title": "Transportstyrelsen",
+          "id": 12,
+          "expense": 2020897
+        },
+        {
+          "title": "Trafikanalys",
+          "id": 13,
+          "expense": 62851
+        },
+        {
+          "title": "Trängselskatt i Göteborg",
+          "id": 14,
+          "expense": 888963
+        },
+        {
+          "title": "Post- och telestyrelsen",
+          "id": 15,
+          "expense": 27487
+        },
+        {
+          "title": "Ersättning för särskilda tjänster till funktionshindrade",
+          "id": 16,
+          "expense": 138278
+        },
+        {
+          "title": "Grundläggande betaltjänster",
+          "id": 17,
+          "expense": 37000
+        },
+        {
+          "title": "Informationsteknik och telekommunikation",
+          "id": 18,
+          "expense": 23844
+        },
+        {
+          "title": "Driftsäker och tillgänglig elektronisk kommunikation",
+          "id": 19,
+          "expense": 120014
+        },
+        {
+          "title": "Gemensamma e-förvaltningsprojekt av strategisk betydelse",
+          "id": 20,
+          "expense": 48050
+        }
+      ],
+      "uo": 22
+    },
+    {
+      "total": 15787422,
+      "title": "Areella näringar, landsbygd och livsmedel",
+      "rows": [
+        {
+          "title": "Skogsstyrelsen",
+          "id": 1,
+          "expense": 406278
+        },
+        {
+          "title": "Insatser för skogsbruket",
+          "id": 2,
+          "expense": 366373
+        },
+        {
+          "title": "Statens veterinärmedicinska anstalt",
+          "id": 3,
+          "expense": 115921
+        },
+        {
+          "title": "Bidrag till veterinär fältverksamhet",
+          "id": 4,
+          "expense": 107074
+        },
+        {
+          "title": "Djurhälsovård och djurskyddsfrämjande åtgärder",
+          "id": 5,
+          "expense": 13433
+        },
+        {
+          "title": "Bekämpande av smittsamma husdjurssjukdomar",
+          "id": 6,
+          "expense": 124349
+        },
+        {
+          "title": "Ersättningar för viltskador m.m.",
+          "id": 7,
+          "expense": 57778
+        },
+        {
+          "title": "Statens jordbruksverk",
+          "id": 8,
+          "expense": 519086
+        },
+        {
+          "title": "Bekämpande av växtskadegörare",
+          "id": 9,
+          "expense": 5000
+        },
+        {
+          "title": "Gårdsstöd m.m.",
+          "id": 10,
+          "expense": 6097400
+        },
+        {
+          "title": "Intervention för jordbruksprodukter m.m.",
+          "id": 11,
+          "expense": 129000
+        },
+        {
+          "title": "Finansiella korrigeringar m.m.",
+          "id": 12,
+          "expense": 75472
+        },
+        {
+          "title": "Strukturstöd till fisket m.m.",
+          "id": 13,
+          "expense": 46105
+        },
+        {
+          "title": "Från EU-budgeten finansierade strukturstöd till fisket m.m.",
+          "id": 14,
+          "expense": 143051
+        },
+        {
+          "title": "Livsmedelsverket",
+          "id": 15,
+          "expense": 303139
+        },
+        {
+          "title": "Konkurrenskraftig livsmedelssektor",
+          "id": 16,
+          "expense": 15160
+        },
+        {
+          "title": "Bidrag till vissa internationella organisationer m.m.",
+          "id": 17,
+          "expense": 42913
+        },
+        {
+          "title": "Åtgärder för landsbygdens miljö och struktur",
+          "id": 18,
+          "expense": 2740505
+        },
+        {
+          "title": "Från EU-budgeten finansierade åtgärder för landsbygdens miljö och struktur",
+          "id": 19,
+          "expense": 2083785
+        },
+        {
+          "title": "Miljöförbättrande åtgärder i jordbruket",
+          "id": 20,
+          "expense": 37830
+        },
+        {
+          "title": "Stöd till jordbrukets rationalisering m.m.",
+          "id": 21,
+          "expense": 4116
+        },
+        {
+          "title": "Stöd till innehavare av fjällägenheter m.m.",
+          "id": 22,
+          "expense": 1029
+        },
+        {
+          "title": "Främjande av rennäringen m.m.",
+          "id": 23,
+          "expense": 107915
+        },
+        {
+          "title": "Sveriges lantbruksuniversitet",
+          "id": 24,
+          "expense": 1727833
+        },
+        {
+          "title": "Forskningsrådet för miljö, areella näringar och samhällsbyggande: Forskning och samfinansierad forskning",
+          "id": 25,
+          "expense": 515700
+        },
+        {
+          "title": "Bidrag till Skogs- och lantbruksakademien",
+          "id": 26,
+          "expense": 1177
+        }
+      ],
+      "uo": 23
+    },
+    {
+      "total": 5366162,
+      "title": "Näringsliv",
+      "rows": [
+        {
+          "title": "Verket för innovationssystem",
+          "id": 1,
+          "expense": 220176
+        },
+        {
+          "title": "Verket för innovationssystem: Forskning och utveckling",
+          "id": 2,
+          "expense": 2418966
+        },
+        {
+          "title": "Institutens strategiska kompetensmedel",
+          "id": 3,
+          "expense": 615907
+        },
+        {
+          "title": "Tillväxtverket",
+          "id": 4,
+          "expense": 268960
+        },
+        {
+          "title": "Näringslivsutveckling",
+          "id": 5,
+          "expense": 316772
+        },
+        {
+          "title": "Myndigheten för tillväxtpolitiska utvärderingar och analyser",
+          "id": 6,
+          "expense": 81503
+        },
+        {
+          "title": "Turistfrämjande",
+          "id": 7,
+          "expense": 109824
+        },
+        {
+          "title": "Sveriges geologiska undersökning",
+          "id": 8,
+          "expense": 224428
+        },
+        {
+          "title": "Geovetenskaplig forskning",
+          "id": 9,
+          "expense": 5806
+        },
+        {
+          "title": "Miljösäkring av oljelagringsanläggningar",
+          "id": 10,
+          "expense": 14000
+        },
+        {
+          "title": "Patentbesvärsrätten",
+          "id": 11,
+          "expense": 19238
+        },
+        {
+          "title": "Bolagsverket",
+          "id": 12,
+          "expense": 24842
+        },
+        {
+          "title": "Bidrag till terminologisk verksamhet",
+          "id": 13,
+          "expense": 4288
+        },
+        {
+          "title": "Bidrag till Ingenjörsvetenskapsakademien",
+          "id": 14,
+          "expense": 8327
+        },
+        {
+          "title": "Konkurrensverket",
+          "id": 15,
+          "expense": 215192
+        },
+        {
+          "title": "Konkurrensforskning",
+          "id": 16,
+          "expense": 13657
+        },
+        {
+          "title": "Upprustning och drift av Göta kanal",
+          "id": 17,
+          "expense": 25210
+        },
+        {
+          "title": "Omstrukturering och genomlysning av statligt ägda företag",
+          "id": 18,
+          "expense": 22200
+        },
+        {
+          "title": "Kapitalinsatser i statliga bolag",
+          "id": 19,
+          "expense": 1000
+        },
+        {
+          "title": "Avgifter till vissa internationella organisationer",
+          "id": 20,
+          "expense": 17780
+        },
+        {
+          "title": "Finansiering av rättegångskostnader",
+          "id": 21,
+          "expense": 18000
+        },
+        {
+          "title": "Bidrag till företagsutveckling och innovation",
+          "id": 22,
+          "expense": 259777
+        },
+        {
+          "title": "Styrelsen för ackreditering och teknisk kontroll: Myndighetsverksamhet",
+          "id": 23,
+          "expense": 23885
+        },
+        {
+          "title": "Kommerskollegium",
+          "id": 24,
+          "expense": 83553
+        },
+        {
+          "title": "Exportfrämjande verksamhet",
+          "id": 25,
+          "expense": 243889
+        },
+        {
+          "title": "Investeringsfrämjande",
+          "id": 26,
+          "expense": 57410
+        },
+        {
+          "title": "Avgifter till internationella handelsorganisationer",
+          "id": 27,
+          "expense": 20517
+        },
+        {
+          "title": "Bidrag till standardiseringen",
+          "id": 28,
+          "expense": 31055
+        }
+      ],
+      "uo": 24
+    },
+    {
+      "total": 94490852,
+      "title": "Allmänna bidrag till kommuner",
+      "rows": [
+        {
+          "title": "Kommunalekonomisk utjämning",
+          "id": 1,
+          "expense": 90772537
+        },
+        {
+          "title": "Utjämningsbidrag för LSS-kostnader",
+          "id": 2,
+          "expense": 3712965
+        },
+        {
+          "title": "Bidrag till kommunalekonomiska organisationer",
+          "id": 3,
+          "expense": 5350
+        }
+      ],
+      "uo": 25
+    },
+    {
+      "total": 20526200,
+      "title": "Statsskuldsräntor m.m.",
+      "rows": [
+        {
+          "title": "Räntor på statsskulden",
+          "id": 1,
+          "expense": 20371000
+        },
+        {
+          "title": "Oförutsedda utgifter",
+          "id": 2,
+          "expense": 10000
+        },
+        {
+          "title": "Riksgäldskontorets provisionsutgifter",
+          "id": 3,
+          "expense": 145200
+        }
+      ],
+      "uo": 26
+    },
+    {
+      "total": 40126178,
+      "title": "Avgiften till Europeiska unionen",
+      "rows": [
+        {
+          "title": "Avgiften till Europeiska unionen",
+          "id": 1,
+          "expense": 40126178
+        }
+      ],
+      "uo": 27
+    }
+  ],
+  "revenues": [
+    {
+      "rows": [
+        {
+          "title": "Statlig inkomstskatt",
+          "id": 1111,
+          "revenue": 53190860
+        },
+        {
+          "title": "Kommunal inkomstskatt",
+          "id": 1115,
+          "revenue": 633957211
+        },
+        {
+          "title": "Allmän pensionsavgift",
+          "id": 1121,
+          "revenue": 109240622
+        },
+        {
+          "title": "Artistskatt",
+          "id": 1131,
+          "revenue": -535
+        },
+        {
+          "title": "Allmän pensionsavgift",
+          "id": 1141,
+          "revenue": -109939801
+        },
+        {
+          "title": "Fastighetsavgift",
+          "id": 1144,
+          "revenue": -199075
+        },
+        {
+          "title": "Sjöinkomst",
+          "id": 1151,
+          "revenue": -62784
+        },
+        {
+          "title": "Jobbskatteavdrag",
+          "id": 1153,
+          "revenue": -101653522
+        },
+        {
+          "title": "HUS-avdrag",
+          "id": 1154,
+          "revenue": -18517720
+        },
+        {
+          "title": "Gåvor till ideell verksamhet",
+          "id": 1155,
+          "revenue": 0
+        },
+        {
+          "title": "Övriga skattereduktioner",
+          "id": 1156,
+          "revenue": -17000
+        },
+        {
+          "title": "Sjukförsäkringsavgift",
+          "id": 1211,
+          "revenue": 65178377
+        },
+        {
+          "title": "Föräldraförsäkringsavgift",
+          "id": 1212,
+          "revenue": 38957091
+        },
+        {
+          "title": "Arbetsskadeavgift",
+          "id": 1213,
+          "revenue": 4495049
+        },
+        {
+          "title": "Ålderspensionsavgift",
+          "id": 1214,
+          "revenue": 162101485
+        },
+        {
+          "title": "Efterlevandepensionsavgift",
+          "id": 1215,
+          "revenue": 17530691
+        },
+        {
+          "title": "Arbetsmarknadsavgift",
+          "id": 1216,
+          "revenue": 43027929
+        },
+        {
+          "title": "Allmän löneavgift",
+          "id": 1217,
+          "revenue": 148036946
+        },
+        {
+          "title": "Ofördelade avgifter",
+          "id": 1218,
+          "revenue": 0
+        },
+        {
+          "title": "Nedsatta avgifter",
+          "id": 1219,
+          "revenue": 13013980
+        },
+        {
+          "title": "Sjukförsäkringsavgift",
+          "id": 1241,
+          "revenue": -27518
+        },
+        {
+          "title": "Föräldraförsäkringsavgift",
+          "id": 1242,
+          "revenue": 1149744
+        },
+        {
+          "title": "Arbetsskadeavgift",
+          "id": 1243,
+          "revenue": 132442
+        },
+        {
+          "title": "Ålderspensionsavgift, netto",
+          "id": 1244,
+          "revenue": 5302010
+        },
+        {
+          "title": "Efterlevandepensionsavgift",
+          "id": 1245,
+          "revenue": 517071
+        },
+        {
+          "title": "Arbetsmarknadsavgift",
+          "id": 1246,
+          "revenue": -68333
+        },
+        {
+          "title": "Allmän löneavgift",
+          "id": 1247,
+          "revenue": 4340578
+        },
+        {
+          "title": "Ofördelade avgifter",
+          "id": 1248,
+          "revenue": 0
+        },
+        {
+          "title": "Nedsatta avgifter",
+          "id": 1249,
+          "revenue": 2350937
+        },
+        {
+          "title": "Avgifter till premiepensionssystemet",
+          "id": 1261,
+          "revenue": -33812304
+        },
+        {
+          "title": "Pensionskostnader, företag",
+          "id": 1271,
+          "revenue": 34499326
+        },
+        {
+          "title": "Pensionskostnader, staten",
+          "id": 1272,
+          "revenue": 3398518
+        },
+        {
+          "title": "Förvärvsinkomster",
+          "id": 1273,
+          "revenue": 3415151
+        },
+        {
+          "title": "Egenföretagare",
+          "id": 1274,
+          "revenue": 1251859
+        },
+        {
+          "title": "Övrigt",
+          "id": 1275,
+          "revenue": 0
+        },
+        {
+          "title": "Arbetsgivaravgifter",
+          "id": 1282,
+          "revenue": -13013980
+        },
+        {
+          "title": "Egenavgifter, generell nedsättning",
+          "id": 1283,
+          "revenue": -2263888
+        },
+        {
+          "title": "Egenavgifter, regional nedsättning",
+          "id": 1284,
+          "revenue": -87049
+        },
+        {
+          "title": "Tjänstegruppliv",
+          "id": 1291,
+          "revenue": 675492
+        },
+        {
+          "title": "Skatt på kapital",
+          "id": 1311,
+          "revenue": 55882330
+        },
+        {
+          "title": "Skattereduktion kapital",
+          "id": 1312,
+          "revenue": -15286919
+        },
+        {
+          "title": "Expansionsmedelsskatt",
+          "id": 1313,
+          "revenue": 576101
+        },
+        {
+          "title": "Skatt på företagsvinster",
+          "id": 1321,
+          "revenue": 94129123
+        },
+        {
+          "title": "Skattereduktioner",
+          "id": 1322,
+          "revenue": 0
+        },
+        {
+          "title": "Kupongskatt",
+          "id": 1331,
+          "revenue": 4351249
+        },
+        {
+          "title": "Avkastningsskatt, hushåll",
+          "id": 1341,
+          "revenue": 147693
+        },
+        {
+          "title": "Avkastningsskatt, företag",
+          "id": 1342,
+          "revenue": 8721383
+        },
+        {
+          "title": "Avkastningsskatt på individuellt pensionssparande",
+          "id": 1343,
+          "revenue": 274139
+        },
+        {
+          "title": "Fastighetsskatt, hushåll",
+          "id": 1351,
+          "revenue": 697302
+        },
+        {
+          "title": "Fastighetsskatt, företag",
+          "id": 1352,
+          "revenue": 14458252
+        },
+        {
+          "title": "Kommunal fastighetsavgift, hushåll",
+          "id": 1353,
+          "revenue": 13166087
+        },
+        {
+          "title": "Kommunal fastighetsavgift, företag",
+          "id": 1354,
+          "revenue": 3170675
+        },
+        {
+          "title": "Stämpelskatt",
+          "id": 1361,
+          "revenue": 9274685
+        },
+        {
+          "title": "Arvsskatt",
+          "id": 1381,
+          "revenue": 0
+        },
+        {
+          "title": "Mervärdesskatt",
+          "id": 1411,
+          "revenue": 370646054
+        },
+        {
+          "title": "Skatt på tobak",
+          "id": 1421,
+          "revenue": 11405020
+        },
+        {
+          "title": "Skatt på etylalkohol",
+          "id": 1422,
+          "revenue": 3974830
+        },
+        {
+          "title": "Skatt på vin",
+          "id": 1423,
+          "revenue": 5428338
+        },
+        {
+          "title": "Skatt på mellanklassprodukter",
+          "id": 1424,
+          "revenue": 180995
+        },
+        {
+          "title": "Skatt på öl",
+          "id": 1425,
+          "revenue": 3946339
+        },
+        {
+          "title": "Privatinförsel av alkohol och tobak",
+          "id": 1426,
+          "revenue": 4775
+        },
+        {
+          "title": "Skatt på elektrisk kraft",
+          "id": 1431,
+          "revenue": 21405060
+        },
+        {
+          "title": "Energiskatt bensin",
+          "id": 1432,
+          "revenue": 10595032
+        },
+        {
+          "title": "Energiskatt oljeprodukter",
+          "id": 1433,
+          "revenue": 9819310
+        },
+        {
+          "title": "Energiskatt övrigt",
+          "id": 1434,
+          "revenue": 297227
+        },
+        {
+          "title": "Koldioxidskatt bensin",
+          "id": 1441,
+          "revenue": 8413187
+        },
+        {
+          "title": "Koldioxidskatt oljeprodukter",
+          "id": 1442,
+          "revenue": 15643540
+        },
+        {
+          "title": "Koldioxidskatt övrigt",
+          "id": 1443,
+          "revenue": 1000184
+        },
+        {
+          "title": "Svavelskatt",
+          "id": 1451,
+          "revenue": 29117
+        },
+        {
+          "title": "Skatt på råtallolja",
+          "id": 1452,
+          "revenue": 0
+        },
+        {
+          "title": "Särskild skatt mot försurning",
+          "id": 1453,
+          "revenue": 57645
+        },
+        {
+          "title": "Skatt på bekämpningsmedel",
+          "id": 1454,
+          "revenue": 110825
+        },
+        {
+          "title": "Skatt på termisk effekt i kärnkraftsreaktorer",
+          "id": 1455,
+          "revenue": 4715093
+        },
+        {
+          "title": "Avfallsskatt",
+          "id": 1456,
+          "revenue": 123686
+        },
+        {
+          "title": "Avgifter till Kemikalieinspektionen",
+          "id": 1457,
+          "revenue": 12300
+        },
+        {
+          "title": "Övriga skatter",
+          "id": 1458,
+          "revenue": 146090
+        },
+        {
+          "title": "Intäkter från EU:s handel med utsläppsrätter",
+          "id": 1459,
+          "revenue": 506206
+        },
+        {
+          "title": "Fordonsskatt",
+          "id": 1471,
+          "revenue": 13556118
+        },
+        {
+          "title": "Vägavgifter",
+          "id": 1472,
+          "revenue": 830783
+        },
+        {
+          "title": "Trängselskatt",
+          "id": 1473,
+          "revenue": 1859000
+        },
+        {
+          "title": "Skatt på trafikförsäkringspremier",
+          "id": 1474,
+          "revenue": 2790711
+        },
+        {
+          "title": "Systembolaget AB:s överskott",
+          "id": 1481,
+          "revenue": 102000
+        },
+        {
+          "title": "Inlevererat överskott från Svenska Spel AB",
+          "id": 1482,
+          "revenue": 5055050
+        },
+        {
+          "title": "Skatt på spel",
+          "id": 1483,
+          "revenue": 16758
+        },
+        {
+          "title": "Lotteriskatt",
+          "id": 1484,
+          "revenue": 1303453
+        },
+        {
+          "title": "Lotteriavgifter",
+          "id": 1485,
+          "revenue": 32538
+        },
+        {
+          "title": "Skatt på annonser och reklam",
+          "id": 1486,
+          "revenue": 264857
+        },
+        {
+          "title": "Lokalradioavgifter",
+          "id": 1488,
+          "revenue": 118200
+        },
+        {
+          "title": "Avgifter avseende Myndigheten för radio och tv",
+          "id": 1489,
+          "revenue": 8700
+        },
+        {
+          "title": "Avgifter för telekommunikation",
+          "id": 1491,
+          "revenue": 102000
+        },
+        {
+          "title": "Försäljningsskatt på motorfordon",
+          "id": 1492,
+          "revenue": 0
+        },
+        {
+          "title": "Tullmedel",
+          "id": 1511,
+          "revenue": 5680140
+        },
+        {
+          "title": "Sockeravgifter",
+          "id": 1512,
+          "revenue": 276116
+        },
+        {
+          "title": "Restförda skatter, hushåll",
+          "id": 1611,
+          "revenue": -2105406
+        },
+        {
+          "title": "Restförda skatter, företag",
+          "id": 1612,
+          "revenue": -4511207
+        },
+        {
+          "title": "Omprövningar aktuellt taxeringsår",
+          "id": 1621,
+          "revenue": -23784
+        },
+        {
+          "title": "Omprövningar äldre taxeringsår",
+          "id": 1622,
+          "revenue": 49582
+        },
+        {
+          "title": "Anstånd",
+          "id": 1623,
+          "revenue": 500000
+        },
+        {
+          "title": "Övriga skatter",
+          "id": 1624,
+          "revenue": 1758253
+        },
+        {
+          "title": "Skattetillägg",
+          "id": 1625,
+          "revenue": 145004
+        },
+        {
+          "title": "Förseningsavgifter",
+          "id": 1626,
+          "revenue": 107845
+        },
+        {
+          "title": "Omprövningar aktuellt taxeringsår",
+          "id": 1631,
+          "revenue": -1660360
+        },
+        {
+          "title": "Omprövningar äldre taxeringsår",
+          "id": 1632,
+          "revenue": 400000
+        },
+        {
+          "title": "Anstånd",
+          "id": 1633,
+          "revenue": -1000000
+        },
+        {
+          "title": "Övriga skatter",
+          "id": 1634,
+          "revenue": 522315
+        },
+        {
+          "title": "Skattetillägg",
+          "id": 1635,
+          "revenue": 1286320
+        },
+        {
+          "title": "Förseningsavgifter",
+          "id": 1636,
+          "revenue": 193524
+        },
+        {
+          "title": "Insättningsgarantiavgifter",
+          "id": 1641,
+          "revenue": 4595754
+        },
+        {
+          "title": "Avgifter till Kärnavfallsfonden",
+          "id": 1642,
+          "revenue": 2478449
+        },
+        {
+          "title": "Batteriavgifter",
+          "id": 1644,
+          "revenue": 4869
+        },
+        {
+          "title": "Kväveoxidavgifter",
+          "id": 1645,
+          "revenue": 666156
+        },
+        {
+          "title": "EU-skatter",
+          "id": 1711,
+          "revenue": -5956256
+        },
+        {
+          "title": "Kommunala inkomstskatter",
+          "id": 1811,
+          "revenue": -649903510
+        },
+        {
+          "title": "Avgifter till AP-fonder",
+          "id": 1812,
+          "revenue": -224335707
+        },
+        {
+          "title": "Uppbördsförskjutningar",
+          "id": 1911,
+          "revenue": 4040592
+        },
+        {
+          "title": "Kommuner och landsting",
+          "id": 1921,
+          "revenue": 3091216
+        },
+        {
+          "title": "Ålderpensionssystemet",
+          "id": 1922,
+          "revenue": -72111
+        },
+        {
+          "title": "Företag och hushåll",
+          "id": 1923,
+          "revenue": -9318622
+        },
+        {
+          "title": "Kyrkosamfund",
+          "id": 1924,
+          "revenue": -979527
+        },
+        {
+          "title": "EU",
+          "id": 1925,
+          "revenue": 29268
+        },
+        {
+          "title": "Anstånd",
+          "id": 1931,
+          "revenue": 50997
+        }
+      ],
+      "total": 876172891,
+      "title": "Statens skatteinkomster",
+      "id_start": 1000,
+      "id_end": 1999
+    },
+    {
+      "rows": [
+        {
+          "title": "Luftfartsverkets inlevererade överskott",
+          "id": 2114,
+          "revenue": 11000
+        },
+        {
+          "title": "Affärsverket Svenska Kraftnäts inlevererade utdelning och inleverans av motsvarighet till statlig skatt",
+          "id": 2116,
+          "revenue": 312000
+        },
+        {
+          "title": "Sjöfartsverkets inlevererade överskott",
+          "id": 2118,
+          "revenue": 0
+        },
+        {
+          "title": "Inlevererat överskott av Riksgäldskontorets garantiverksamhet",
+          "id": 2124,
+          "revenue": 50000
+        },
+        {
+          "title": "Inlevererat överskott av statsstödd exportkredit",
+          "id": 2126,
+          "revenue": 50000
+        },
+        {
+          "title": "Riksbankens inlevererade överskott",
+          "id": 2131,
+          "revenue": 2400000
+        },
+        {
+          "title": "Inlevererat överskott av statens fastighetsförvaltning",
+          "id": 2215,
+          "revenue": 438000
+        },
+        {
+          "title": "Ränteinkomster på lån till fiskerinäringen",
+          "id": 2314,
+          "revenue": 2
+        },
+        {
+          "title": "Ränteinkomster på vattenkraftslån",
+          "id": 2316,
+          "revenue": 0
+        },
+        {
+          "title": "Räntor på övriga näringslån, Kammarkollegiet",
+          "id": 2322,
+          "revenue": -1004
+        },
+        {
+          "title": "Räntor på övriga näringslån",
+          "id": 2323,
+          "revenue": 0
+        },
+        {
+          "title": "Ränteinkomster på lokaliseringslån",
+          "id": 2324,
+          "revenue": 168
+        },
+        {
+          "title": "Ränteinkomster på statens lån för universitetsstudier och garantilån för studerande",
+          "id": 2341,
+          "revenue": 0
+        },
+        {
+          "title": "Ränteinkomster på allmänna studielån",
+          "id": 2342,
+          "revenue": 39000
+        },
+        {
+          "title": "Ränteinkomster på studielån upptagna efter 1988",
+          "id": 2343,
+          "revenue": 0
+        },
+        {
+          "title": "Ränteinkomster på markförvärv för jordbrukets rationalisering",
+          "id": 2391,
+          "revenue": 15
+        },
+        {
+          "title": "Räntor på intressemedel",
+          "id": 2392,
+          "revenue": 0
+        },
+        {
+          "title": "Övriga ränteinkomster",
+          "id": 2394,
+          "revenue": 92640
+        },
+        {
+          "title": "Räntor på skattekonto m.m., netto",
+          "id": 2397,
+          "revenue": 1707800
+        },
+        {
+          "title": "Inkomster av statens aktier",
+          "id": 2411,
+          "revenue": 18000000
+        },
+        {
+          "title": "Expeditions- och ansökningsavgifter",
+          "id": 2511,
+          "revenue": 910759
+        },
+        {
+          "title": "Fastställande av åldersgränser för framställning i film",
+          "id": 2522,
+          "revenue": 4000
+        },
+        {
+          "title": "Finansieringsavgift från arbetslöshetskassor",
+          "id": 2525,
+          "revenue": 3133928
+        },
+        {
+          "title": "Utjämningsavgift från arbetslöshetskassor",
+          "id": 2526,
+          "revenue": 0
+        },
+        {
+          "title": "Avgifter för statskontroll av krigsmaterieltillverkning",
+          "id": 2527,
+          "revenue": 26400
+        },
+        {
+          "title": "Avgifter vid bergsstaten",
+          "id": 2528,
+          "revenue": 12000
+        },
+        {
+          "title": "Avgifter vid patent- och registreringsväsendet",
+          "id": 2529,
+          "revenue": 111756
+        },
+        {
+          "title": "Avgifter för registrering i förenings- m.fl. register",
+          "id": 2531,
+          "revenue": 2663
+        },
+        {
+          "title": "Avgifter vid kronofogdemyndigheterna",
+          "id": 2532,
+          "revenue": 1395000
+        },
+        {
+          "title": "Avgifter vid Transportstyrelsen",
+          "id": 2534,
+          "revenue": 1549000
+        },
+        {
+          "title": "Avgifter för statliga garantier",
+          "id": 2535,
+          "revenue": 0
+        },
+        {
+          "title": "Miljöskyddsavgifter",
+          "id": 2537,
+          "revenue": 128700
+        },
+        {
+          "title": "Täktavgift",
+          "id": 2539,
+          "revenue": 0
+        },
+        {
+          "title": "Avgifter vid Tullverket",
+          "id": 2541,
+          "revenue": 0
+        },
+        {
+          "title": "Patientavgifter vid tandläkarutbildningen",
+          "id": 2542,
+          "revenue": 3000
+        },
+        {
+          "title": "Avgifter för Finansinspektionens verksamhet",
+          "id": 2548,
+          "revenue": 458000
+        },
+        {
+          "title": "Avgifter från kärnkraftverken",
+          "id": 2551,
+          "revenue": 285000
+        },
+        {
+          "title": "Övriga offentligrättsliga avgifter",
+          "id": 2552,
+          "revenue": 469525
+        },
+        {
+          "title": "Registreringsavgift till Fastighetsmäklarinspektionen",
+          "id": 2553,
+          "revenue": 17320
+        },
+        {
+          "title": "Avgifter vid statens internbank i Riksgäldskontoret",
+          "id": 2557,
+          "revenue": 4672
+        },
+        {
+          "title": "Avgifter för årlig revision",
+          "id": 2558,
+          "revenue": 135000
+        },
+        {
+          "title": "Avgifter för etikprövning av forskning",
+          "id": 2559,
+          "revenue": 27000
+        },
+        {
+          "title": "Efterbevaknings- och tillsynsavgifter",
+          "id": 2561,
+          "revenue": 22000
+        },
+        {
+          "title": "Inkomster av uppbörd av felparkeringsavgifter",
+          "id": 2624,
+          "revenue": 57000
+        },
+        {
+          "title": "Utförsäljning av beredskapslager",
+          "id": 2625,
+          "revenue": 0
+        },
+        {
+          "title": "Offentlig lagring, försäljningsintäkter",
+          "id": 2627,
+          "revenue": 0
+        },
+        {
+          "title": "Restavgifter och dröjsmålsavgifter",
+          "id": 2711,
+          "revenue": 97000
+        },
+        {
+          "title": "Bötesmedel",
+          "id": 2712,
+          "revenue": 985000
+        },
+        {
+          "title": "Vattenföroreningsavgift m.m.",
+          "id": 2713,
+          "revenue": 2600
+        },
+        {
+          "title": "Sanktionsavgifter m.m.",
+          "id": 2714,
+          "revenue": 50000
+        },
+        {
+          "title": "Kontrollavgifter vid särskild skattekontroll",
+          "id": 2717,
+          "revenue": 51000
+        },
+        {
+          "title": "Övriga inkomster av statens verksamhet",
+          "id": 2811,
+          "revenue": 612000
+        }
+      ],
+      "total": 33649944,
+      "title": "Inkomster av statens verksamhet",
+      "id_start": 2000,
+      "id_end": 2999
+    },
+    {
+      "rows": [
+        {
+          "title": "Fortifikationsverkets försäljning av fastigheter",
+          "id": 3125,
+          "revenue": 0
+        },
+        {
+          "title": "Övriga inkomster av markförsäljning",
+          "id": 3211,
+          "revenue": 0
+        },
+        {
+          "title": "Inkomster av statens gruvegendom",
+          "id": 3311,
+          "revenue": 0
+        },
+        {
+          "title": "Övriga inkomster av försåld egendom",
+          "id": 3312,
+          "revenue": 15000000
+        }
+      ],
+      "total": 15000000,
+      "title": "Inkomster av försåld egendom",
+      "id_start": 3000,
+      "id_end": 3999
+    },
+    {
+      "rows": [
+        {
+          "title": "Återbetalning av lån till fiskerinäringen",
+          "id": 4123,
+          "revenue": 400
+        },
+        {
+          "title": "Återbetalning av vattenkraftslån",
+          "id": 4131,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av lån avseende såddfinansiering",
+          "id": 4132,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av övriga näringslån, Kammarkollegiet",
+          "id": 4136,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av övriga näringslån, Statens jordbruksverk",
+          "id": 4137,
+          "revenue": 1000
+        },
+        {
+          "title": "Återbetalning av tidigare infriade statliga garantier",
+          "id": 4138,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av lokaliseringslån",
+          "id": 4139,
+          "revenue": 400
+        },
+        {
+          "title": "Återbetalning av statens lån för universitetsstudier",
+          "id": 4311,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av allmänna studielån",
+          "id": 4312,
+          "revenue": 100
+        },
+        {
+          "title": "Återbetalning av studiemedel",
+          "id": 4313,
+          "revenue": 733000
+        },
+        {
+          "title": "Återbetalning av utgivna startlån och bidrag",
+          "id": 4516,
+          "revenue": 0
+        },
+        {
+          "title": "Återbetalning av lån för svenska FN-styrkor",
+          "id": 4525,
+          "revenue": 1000
+        },
+        {
+          "title": "Återbetalning av övriga lån",
+          "id": 4526,
+          "revenue": 140000
+        }
+      ],
+      "total": 875900,
+      "title": "Återbetalning av lån",
+      "id_start": 4000,
+      "id_end": 4999
+    },
+    {
+      "rows": [
+        {
+          "title": "Amortering på statskapital",
+          "id": 5121,
+          "revenue": 159000
+        },
+        {
+          "title": "Uppdragsmyndigheters m.fl. komplementkostnader",
+          "id": 5131,
+          "revenue": 0
+        },
+        {
+          "title": "Statliga pensionsavgifter",
+          "id": 5211,
+          "revenue": 9839000
+        }
+      ],
+      "total": 9998000,
+      "title": "Kalkylmässiga inkomster",
+      "id_start": 5000,
+      "id_end": 5999
+    },
+    {
+      "rows": [
+        {
+          "title": "Gårdsstöd",
+          "id": 6111,
+          "revenue": 5921200
+        },
+        {
+          "title": "Övriga interventioner",
+          "id": 6113,
+          "revenue": 130000
+        },
+        {
+          "title": "Exportbidrag",
+          "id": 6114,
+          "revenue": 0
+        },
+        {
+          "title": "Djurbidrag",
+          "id": 6115,
+          "revenue": 0
+        },
+        {
+          "title": "Offentlig lagring",
+          "id": 6116,
+          "revenue": 12000
+        },
+        {
+          "title": "Övriga bidrag från Europeiska garantifonden för jordbruket",
+          "id": 6119,
+          "revenue": 8000
+        },
+        {
+          "title": "Europeiska utvecklings och garantifonden - garantisektionen 2000–2006",
+          "id": 6123,
+          "revenue": 0
+        },
+        {
+          "title": "Bidrag från Europeiska jordbruksfonden för landsbygdsutveckling 2007–2013",
+          "id": 6124,
+          "revenue": 0
+        },
+        {
+          "title": "Bidrag från Europeiska jordbruksfonden för landsbygdsutveckling 2014-2020",
+          "id": 6125,
+          "revenue": 2312000
+        },
+        {
+          "title": "Bidrag från Europeiska fiskefonden 2007–2013",
+          "id": 6213,
+          "revenue": 39000
+        },
+        {
+          "title": "Bidrag från Europeiska havs- och fiskerifonden 2014-2020",
+          "id": 6214,
+          "revenue": 35000
+        },
+        {
+          "title": "Bidrag från Europeiska regionala utvecklingsfonden 2007–2013",
+          "id": 6313,
+          "revenue": 218000
+        },
+        {
+          "title": "Bidrag från Europeiska regionala utvecklingsfonden 2014-2020",
+          "id": 6314,
+          "revenue": 106000
+        },
+        {
+          "title": "Bidrag från Europeiska socialfonden 2007–2013",
+          "id": 6413,
+          "revenue": 556000
+        },
+        {
+          "title": "Bidrag från Europeiska socialfonden 2014-2020",
+          "id": 6414,
+          "revenue": 395500
+        },
+        {
+          "title": "Bidrag till transeuropeiska nätverk",
+          "id": 6511,
+          "revenue": 400000
+        },
+        {
+          "title": "Övriga bidrag från EU",
+          "id": 6911,
+          "revenue": 200000
+        },
+        {
+          "title": "Bidrag till EU:s omstruktureringsfond för sockersektorn",
+          "id": 6912,
+          "revenue": 0
+        }
+      ],
+      "total": 10332700,
+      "title": "Bidrag m.m. från EU",
+      "id_start": 6000,
+      "id_end": 6999
+    },
+    {
+      "rows": [
+        {
+          "title": "Tullmedel",
+          "id": 7112,
+          "revenue": 5652436
+        },
+        {
+          "title": "Jordbrukstullar och sockeravgifter",
+          "id": 7113,
+          "revenue": 274552
+        },
+        {
+          "title": "Avgifter till EU:s omstruktureringsfond för sockersektorn",
+          "id": 7114,
+          "revenue": 0
+        },
+        {
+          "title": "Utjämningsavgift för LSS-kostnader",
+          "id": 7121,
+          "revenue": 3306109
+        },
+        {
+          "title": "Intäkter som förs till fonder",
+          "id": 7211,
+          "revenue": -7745228
+        },
+        {
+          "title": "Avräknad mervärdesskatt, statliga myndigheter",
+          "id": 7221,
+          "revenue": -30025340
+        },
+        {
+          "title": "Kompensation för mervärdesskatt, kommuner",
+          "id": 7222,
+          "revenue": -54986214
+        }
+      ],
+      "total": -83523685,
+      "title": "Avräkningar m.m. i anslutning till skattesystemet",
+      "id_start": 7000,
+      "id_end": 7999
+    },
+    {
+      "rows": [
+        {
+          "title": "Sjöfartsstöd",
+          "id": 8124,
+          "revenue": -1572911
+        },
+        {
+          "title": "Nystartsjobb",
+          "id": 8125,
+          "revenue": -6774000
+        },
+        {
+          "title": "Stöd till yrkesintroduktionsanställning",
+          "id": 8126,
+          "revenue": -67000
+        },
+        {
+          "title": "Stöd till korttidsarbete",
+          "id": 8127,
+          "revenue": 0
+        },
+        {
+          "title": "Ersättning för höga sjuklönekostnader",
+          "id": 8128,
+          "revenue": -18000
+        }
+      ],
+      "total": -8431911,
+      "title": "Utgifter som redovisas som krediteringar på skattekonto",
+      "id_start": 8000,
+      "id_end": 8999
+    },
+    {
+      "rows": [],
+      "total": 0,
+      "title": "Löpande redovisade skatter m.m.",
+      "id_start": 9000,
+      "id_end": 9999
+    }
+  ],
+  "expensesTotal": 890900386,
+  "revenuesTotal": 854073839
+}

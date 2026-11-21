@@ -1,0 +1,245 @@
+{
+  "repo": "https://github.com/kodalbert/statsbudgeten-se",
+  "commits": [
+    {
+      "hash": "6d0f98f27b5e0cc6b69902fb210cf430e7cb8f37",
+      "date": "2026-10-25",
+      "author": "ProddAlbert",
+      "subject": "Rewrite CLAUDE.md with project commands and architecture"
+    },
+    {
+      "hash": "c02872bafa3d87ff57b7db27469b5ec761acfbf2",
+      "date": "2026-10-25",
+      "author": "ProddAlbert",
+      "subject": "Parse the 2013-2021 budget workbooks and add their data"
+    },
+    {
+      "hash": "8fb031433ab08d5db6d4490d9ab4f85f5cf892b2",
+      "date": "2026-10-25",
+      "author": "ProddAlbert",
+      "subject": "Give Google a favicon it can parse: BMP .ico entries and a 96px PNG"
+    },
+    {
+      "hash": "53155a6523afdee68edc197cbe3e5952e5170af1",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Serve the budget data over MCP at /mcp"
+    },
+    {
+      "hash": "fe722592577993be58ecdf145bcd95b5e2732e50",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Size the map from the stage, not from itself, so the list can't resize it"
+    },
+    {
+      "hash": "a6e50026fd1d64c9ed400d691d34e5901d4d740d",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "List the treemap items that are too small for a label under the map"
+    },
+    {
+      "hash": "3052012857010a6221515d200d220e3bc05b97d8",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Format negative amounts in the same unit as positive ones"
+    },
+    {
+      "hash": "e79227feaa0fbfe5cbd20bb9985dcf6f839a0d0d",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Embed the YouTube video at the top of the about page"
+    },
+    {
+      "hash": "ea21055d547a26944fb7ef7ac6ea76735fabf25c",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Make the site crawlable: sitemap, robots, favicon links, static page content"
+    },
+    {
+      "hash": "e12828a7d65db13131966eb796b774d7f794ac0e",
+      "date": "2026-10-22",
+      "author": "ProddAlbert",
+      "subject": "Start the graphs' y-axis at zero, with a relative scale as a setting"
+    },
+    {
+      "hash": "9243d87bb3b3bc603eb677d7e6c5a92c7260fa9d",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Exclude .claude from the Docker build context"
+    },
+    {
+      "hash": "27b7d6219724888739029287c5106ef35aa74d6b",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Fetch the bundled page over loopback, not through the public URL"
+    },
+    {
+      "hash": "ca809ad6fcc3f63033f4eb4b96bfc5072c29643a",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Story image keeps clear of the app chrome"
+    },
+    {
+      "hash": "04d23ca674cdcdd9c63af474581a306c95af174d",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Share button: the chart as a square, 4:5 or 9:16 image"
+    },
+    {
+      "hash": "75288d103984de335a0963fda02f0b658404967d",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Center the about page text and add a credit line"
+    },
+    {
+      "hash": "b275f6a225606b6beaa9bbd4680281f87d21fa8d",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Share image drawn from the page's chart"
+    },
+    {
+      "hash": "4e8db0ab8a752db0eb1343922339d8772fa1d28b",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Cog button: year and unit only"
+    },
+    {
+      "hash": "c93a45100262c385d5f6ea11c80cf23b9117a251",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Ignore Claude Code worktrees"
+    },
+    {
+      "hash": "cd31d81c350c6f3f92bed993ab8e41446eb22ee8",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Desktop settings behind a cog popover"
+    },
+    {
+      "hash": "5719c67c4a0edb2214791a324ea0b276d49f776c",
+      "date": "2026-10-19",
+      "author": "ProddAlbert",
+      "subject": "Social share image for link previews"
+    },
+    {
+      "hash": "81ff077649de5b9d118130d392aa5d1c1966c606",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Graph unit toggle and a modal mobile menu"
+    },
+    {
+      "hash": "cefdba4cb63a7065595595f517146e6f0e0062af",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Charts: axis ends just above the data"
+    },
+    {
+      "hash": "62ead4663072cc01358b8c27282164c5cdf65f57",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Ready for a public repo: MIT license, README rewrite, meta tags"
+    },
+    {
+      "hash": "d3b673e1722333a510a0be4bd0736f0254323731",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Om-sidan: uppdaterad text"
+    },
+    {
+      "hash": "ac7a6a0984189b2075a01e4567faa10e82045cfa",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Logo, favicon and app icons"
+    },
+    {
+      "hash": "0a9781a71aeb985dfcfa70be94db89c42f58176f",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Search page"
+    },
+    {
+      "hash": "6ee946c341ccc4c31c95add19c59b27c46909765",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Om-sidan: egen text"
+    },
+    {
+      "hash": "67d76a21674b15a3ec8370458392e184ebdd62e5",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "About page from Markdown, with source downloads"
+    },
+    {
+      "hash": "d1ff7c648b9a5460cbe0b0cb844ab1831132001c",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Full-screen slide-in mobile menu"
+    },
+    {
+      "hash": "c46bca1b1c8ed590541ec46f6d9c452ae555c49f",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Zoom unreadable tiles on first click"
+    },
+    {
+      "hash": "5317039ce4ddfccb26bcccf7b6d7b5050e559a15",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Mobile layout: collapsible menu and full-bleed boxes"
+    },
+    {
+      "hash": "4c0d069279128ccd86028e3511b9386128158ac0",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Chart info box instead of click-to-select year"
+    },
+    {
+      "hash": "a1c0fc2ab0fc10f19913e5d59a83a84ad5b0c2cb",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Mirror the focus in the URL; overview at /, graph above postings in a group"
+    },
+    {
+      "hash": "677667fca9b66643317318efce18ca43e59fda09",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Convert SCB's inflation workbook to data/inflation.json"
+    },
+    {
+      "hash": "7349fc10e29f1784cdda292348cbef8930327575",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Add Google Analytics as virtual page views and events"
+    },
+    {
+      "hash": "cabce9dc57e01cb877322d4fcd194da4acfb4e49",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Add an inflation-adjustment toggle"
+    },
+    {
+      "hash": "bc16c6d627cddbe3d68b2ac3c16d00729976004d",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Parse the 2022–2025 budget workbooks"
+    },
+    {
+      "hash": "d6967871c893b1db635efea5d3afb017b5d12555",
+      "date": "2026-10-19",
+      "author": "Albert",
+      "subject": "Implement treemap explorer design (v1)"
+    },
+    {
+      "hash": "c6967ed08949ef26ad26001e79d57bafb9fb54e8",
+      "date": "2026-10-17",
+      "author": "ProddAlbert",
+      "subject": "Add Fly.io deployment config"
+    },
+    {
+      "hash": "07bc7ceb5f53d56072a82d42febf5c9512f2af0d",
+      "date": "2026-10-17",
+      "author": "ProddAlbert",
+      "subject": "Initial commit: budget xlsx parser and chart web interface"
+    }
+  ]
+}

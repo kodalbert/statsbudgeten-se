@@ -5,13 +5,18 @@
  */
 import index from "./web/index.html";
 import { BudgetJsonSchema, type BudgetJson } from "../types/BudgetJsonSchema";
+import { ChangelogSchema } from "../types/ChangelogSchema";
 import { InflationSchema } from "../types/InflationSchema";
 import { HEIGHT, WIDTH, pageDescription, pageTitle, renderPng, routeForImage, socialImagePath, type Data } from "./social";
 import { buildUrl, parseRoute } from "./web/routes";
 import { parseMarkdown } from "./markdown";
 import { HEAD_LINKS, canonicalPath, prerender, robotsTxt, sitemapXml, structuredData } from "./seo";
+import { createMcp } from "./mcp";
 
 const root = new URL("..", import.meta.url).pathname;
+
+/** Whether this process serves the public site (set by fly.toml). */
+const PRODUCTION = process.env.NODE_ENV === "production";
 
 /** Years that have a data/<year>.json file, newest first. */
 function listYears(): number[] {
@@ -44,12 +49,18 @@ const aboutPromise = Bun.file(`${root}content/om.md`)
   .then(parseMarkdown)
   .catch(() => []);
 
+/** The committed changelog (bun run changelog), for the Uppdateringar page. */
+const changelogPromise = Bun.file(`${root}data/changelog.json`)
+  .json()
+  .then((j) => ChangelogSchema.parse(j))
+  .catch(() => null);
+
 /** Favicon, app icons, the social share image and the web manifest, from assets/. */
 const asset = (file: string, type: string) =>
   new Response(Bun.file(`${root}assets/${file}`), { headers: { "content-type": type, "cache-control": "public, max-age=86400" } });
 
 /** The public origin, for the absolute URLs in the share tags. */
-const SITE = process.env.SITE_URL ?? (process.env.NODE_ENV === "production" ? "https://statsbudgeten.se" : null);
+const SITE = process.env.SITE_URL ?? (PRODUCTION ? "https://statsbudgeten.se" : null);
 
 /** Every budget year and the inflation rates, read once for the share images. */
 let dataPromise: Promise<Data> | null = null;
@@ -64,6 +75,10 @@ function loadData(): Promise<Data> {
   })();
   return dataPromise;
 }
+
+/** The MCP server at /mcp (src/mcp.ts), built once from the data. */
+let mcpPromise: Promise<ReturnType<typeof createMcp>> | null = null;
+const mcp = (req: Request) => (mcpPromise ??= loadData().then((data) => createMcp(data, SITE))).then((m) => m.fetch(req));
 
 /** Rendered share images by their URL, newest last; the oldest go when it is full. */
 const images = new Map<string, Uint8Array>();
@@ -90,6 +105,18 @@ async function socialImage(req: Request): Promise<Response> {
 }
 
 /**
+ * How long the loopback fetch below may take. It only has to cross the
+ * loopback interface, but the first one also waits for Bun to bundle the page,
+ * so the budget is generous. It must stay finite: an unbounded wait here once
+ * took the site down for two and a half hours, every page request parked on a
+ * loopback fetch that never settled while the process sat idle and healthy.
+ */
+const BUNDLE_TIMEOUT_MS = 15_000;
+
+/** The bundled page's bytes and the headers that describe them. */
+type Bundle = { body: ArrayBuffer; contentType: string; cacheControl: string };
+
+/**
  * The bundled app page, fetched from this server over loopback.
  *
  * It must not go through the public URL: in production that request would
@@ -99,15 +126,40 @@ async function socialImage(req: Request): Promise<Response> {
  * refuse with ERR_CONTENT_DECODING_FAILED. So the fetch stays local and only
  * the headers that describe the body are kept.
  */
-async function bundledPage(): Promise<Response> {
-  const res = await fetch(`http://127.0.0.1:${server.port}/__index`, { headers: { accept: "text/html" } });
-  return new Response(res.body, {
-    status: res.status,
-    headers: {
-      "content-type": res.headers.get("content-type") ?? "text/html;charset=utf-8",
-      "cache-control": res.headers.get("cache-control") ?? "no-cache",
-    },
+async function fetchBundle(): Promise<Bundle> {
+  const res = await fetch(`http://127.0.0.1:${server.port}/__index`, {
+    headers: { accept: "text/html" },
+    signal: AbortSignal.timeout(BUNDLE_TIMEOUT_MS),
   });
+  if (!res.ok) throw new Error(`/__index svarade ${res.status}`);
+  return {
+    body: await res.arrayBuffer(),
+    contentType: res.headers.get("content-type") ?? "text/html;charset=utf-8",
+    cacheControl: res.headers.get("cache-control") ?? "no-cache",
+  };
+}
+
+/** A fresh Response per request; a body may only be read once. */
+const bundleResponse = (bundle: Bundle) =>
+  new Response(bundle.body, { headers: { "content-type": bundle.contentType, "cache-control": bundle.cacheControl } });
+
+/**
+ * The bundle, fetched once. In production it never changes, so one fetch
+ * serves every request and concurrent requests share the one in flight
+ * instead of each opening another loopback connection. A failed fetch is not
+ * kept, so the next request retries.
+ */
+let bundlePromise: Promise<Bundle> | null = null;
+async function bundledPage(): Promise<Response> {
+  // Under `bun --hot` the bundle changes on every edit, so it is re-fetched.
+  if (!PRODUCTION) return bundleResponse(await fetchBundle());
+  bundlePromise ??= fetchBundle();
+  try {
+    return bundleResponse(await bundlePromise);
+  } catch (err) {
+    bundlePromise = null;
+    throw err;
+  }
 }
 
 /**
@@ -142,6 +194,7 @@ async function page(req: Request): Promise<Response> {
     },
   };
   const about = await aboutPromise;
+  const changelog = await changelogPromise;
   return new HTMLRewriter()
     .on("title", {
       element: (el) => {
@@ -166,7 +219,7 @@ async function page(req: Request): Promise<Response> {
     })
     .on("#root", {
       element: (el) => {
-        el.setInnerContent(prerender(route, data, about), { html: true });
+        el.setInnerContent(prerender(route, data, about, changelog), { html: true });
       },
     })
     .transform(html);
@@ -191,14 +244,18 @@ const server = Bun.serve({
     "/inkomster": page,
     "/inkomster/*": page,
     "/om": page,
+    "/uppdateringar": page,
     "/sok": page,
     // The bundled app page itself; `page` fetches it and fills in the share tags.
     "/__index": index,
     "/social/*": socialImage,
+    // Model Context Protocol over HTTP, for LLM clients (src/mcp.ts).
+    "/mcp": mcp,
     "/sitemap.xml": sitemap,
     "/robots.txt": robots,
     "/favicon.ico": () => asset("favicon.ico", "image/x-icon"),
     "/favicon.svg": () => asset("favicon.svg", "image/svg+xml"),
+    "/favicon-96.png": () => asset("favicon-96.png", "image/png"),
     "/apple-touch-icon.png": () => asset("apple-touch-icon.png", "image/png"),
     "/icon-192.png": () => asset("icon-192.png", "image/png"),
     "/icon-512.png": () => asset("icon-512.png", "image/png"),
@@ -220,6 +277,8 @@ const server = Bun.serve({
       });
     },
     "/api/years": () => Response.json(listYears()),
+    "/api/changelog": async () =>
+      Response.json((await changelogPromise) ?? { repo: null, commits: [] }, { headers: { "cache-control": "public, max-age=3600" } }),
     "/api/inflation": async () => {
       const file = Bun.file(`${root}data/inflation.json`);
       if (!(await file.exists())) return Response.json({ rates: {} });
@@ -240,9 +299,14 @@ const server = Bun.serve({
       });
     },
   },
-  development: process.env.NODE_ENV !== "production" && {
+  development: !PRODUCTION && {
     hmr: true,
     console: true,
+  },
+  /** Anything a route throws, so one bad request cannot take the process down. */
+  error(err) {
+    console.error("Serverfel:", err);
+    return new Response("Serverfel", { status: 500, headers: { "content-type": "text/plain; charset=utf-8" } });
   },
 });
 
